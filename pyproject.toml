@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "masar"
+version = "0.1.0"
+description = "Developer Learning Tracker"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Anas Aburshaid", email = "anasaburshaid@gmail.com" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = []
+
+[project.scripts]
+masar = "masar.presentation.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["masar*"]
+exclude = ["tests*"]
