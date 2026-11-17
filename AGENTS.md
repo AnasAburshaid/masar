@@ -141,6 +141,28 @@ After each assigned task, provide:
 
 Keep explanations direct, practical, and technically accurate.
 
+## Pull Request and Merge Workflow
+
+After completing an issue:
+
+1. Create a dedicated feature branch.
+2. Implement the issue and run relevant tests.
+3. Commit and push the feature branch to GitHub.
+4. Create a Pull Request targeting `main`.
+5. Link the related issue and provide a clear summary of the implementation and test results.
+6. Stop and wait for the developer to review the Pull Request.
+
+### Merge Authorization
+
+- Never merge a Pull Request without explicit approval from the developer.
+- Once the developer approves and requests the merge, merge the Pull Request using GitHub.
+- Prefer Squash and Merge for individual feature issues.
+- After merging, synchronize the local `main` branch with the remote `main`.
+- Delete the feature branch after successful merging, if appropriate.
+- Verify that the local repository is clean and up to date before starting another issue.
+
+Never push feature implementation directly to `main`.
+
 ## Core Principle
 
 Build Masar as a professionally structured software product.

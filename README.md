@@ -51,3 +51,78 @@ The application must evolve gradually as new programming concepts are learned.
 Avoid introducing technologies before they are needed.
 
 Prioritize simplicity, readability, maintainability, and understanding over unnecessary complexity.
+
+## Project Structure
+
+Masar follows a layered Clean Architecture structure:
+
+```
+masar/
+├── __init__.py
+├── __main__.py               # Entry point for 'python -m masar'
+├── presentation/             # Presentation layer (CLI, UI interaction)
+│   ├── __init__.py
+│   └── cli.py
+├── application/              # Application layer (use cases, workflow coordination)
+│   └── __init__.py
+├── domain/                   # Domain layer (business entities, rules)
+│   └── __init__.py
+└── infrastructure/           # Infrastructure layer (persistence, external APIs)
+    └── __init__.py
+tests/                        # Automated tests suite
+├── __init__.py
+└── test_cli.py
+pyproject.toml                # Project packaging and build configuration
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.10 or higher
+
+### 1. Setup Virtual Environment
+
+Create and activate a virtual environment:
+
+**On Windows (PowerShell):**
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+**On Linux / macOS:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 2. Install the Project
+
+Install Masar in editable development mode:
+
+```bash
+pip install -e .
+```
+
+### 3. Run the Application
+
+You can run the application directly as a module:
+
+```bash
+python -m masar
+```
+
+Or using the CLI entry point installed by the package:
+
+```bash
+masar
+```
+
+### 4. Run Automated Tests
+
+Run the test suite using Python's built-in `unittest`:
+
+```bash
+python -m unittest discover -s tests -p "test_*.py" -v
+```
