@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from masar.application.interfaces.repositories.journey_repository import (
     JourneyRepository,
@@ -22,7 +23,7 @@ class JsonJourneyRepository(JourneyRepository):
         else:
             self._storage = JsonStorage("masar_data.json")
 
-    def _to_entity(self, item: dict) -> Journey:
+    def _to_entity(self, item: dict[str, Any]) -> Journey:
         created_at = item.get("created_at")
         if isinstance(created_at, str):
             try:
@@ -37,11 +38,11 @@ class JsonJourneyRepository(JourneyRepository):
         return Journey(
             id=item["id"],
             title=item["title"],
-            description=item.get("description"),
+            description=item.get("description") or "",
             created_at=created_dt,
         )
 
-    def _to_dict(self, journey: Journey) -> dict:
+    def _to_dict(self, journey: Journey) -> dict[str, Any]:
         return {
             "id": journey.id,
             "title": journey.title,

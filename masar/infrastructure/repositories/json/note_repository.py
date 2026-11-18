@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from masar.application.interfaces.repositories.note_repository import NoteRepository
 from masar.domain.exceptions import NoteNotFoundError
@@ -20,7 +21,7 @@ class JsonNoteRepository(NoteRepository):
         else:
             self._storage = JsonStorage("masar_data.json")
 
-    def _to_entity(self, item: dict) -> Note:
+    def _to_entity(self, item: dict[str, Any]) -> Note:
         created_at = item.get("created_at")
         if isinstance(created_at, str):
             try:
@@ -51,7 +52,7 @@ class JsonNoteRepository(NoteRepository):
             updated_at=updated_dt,
         )
 
-    def _to_dict(self, note: Note) -> dict:
+    def _to_dict(self, note: Note) -> dict[str, Any]:
         return {
             "id": note.id,
             "topic_id": note.topic_id,

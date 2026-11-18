@@ -126,6 +126,9 @@ class CLI:
 
         try:
             journey = self.journey_service.get_journey(journey_id)
+            if journey.id is None:
+                return
+
             self.output("\n--- Journey Details ---")
             self.output(f"ID: {journey.id}")
             self.output(f"Title: {journey.title}")
@@ -133,24 +136,28 @@ class CLI:
             self.output(f"Description: {description}")
             self.output(f"Created At: {journey.created_at.strftime('%Y-%m-%d %H:%M:%S UTC')}")
 
-            journey_prog = self.progress_service.calculate_journey_progress(journey.id)  # type: ignore[arg-type]
+            journey_prog = self.progress_service.calculate_journey_progress(journey.id)
             self.output(f"Progress: {journey_prog.progress_bar()} {journey_prog.formatted}")
 
-            sections = self.section_service.list_sections(journey.id)  # type: ignore[arg-type]
+            sections = self.section_service.list_sections(journey.id)
             if not sections:
                 self.output("\nSections: (No sections created yet)")
             else:
                 self.output("\nSections & Topics:")
                 for section in sections:
-                    sec_prog = self.progress_service.calculate_section_progress(section.id)  # type: ignore[arg-type]
+                    if section.id is None:
+                        continue
+                    sec_prog = self.progress_service.calculate_section_progress(section.id)
                     self.output(f"  [Section {section.id}] {section.title} - Progress: {sec_prog.formatted}")
-                    topics = self.topic_service.list_topics(section.id)  # type: ignore[arg-type]
+                    topics = self.topic_service.list_topics(section.id)
                     if not topics:
                         self.output("    (No topics yet)")
                     else:
                         for topic in topics:
+                            if topic.id is None:
+                                continue
                             status_str = "[✓] Completed" if topic.is_completed else "[ ] Pending"
-                            notes = self.note_service.list_notes(topic.id)  # type: ignore[arg-type]
+                            notes = self.note_service.list_notes(topic.id)
                             notes_suffix = f" ({len(notes)} notes)" if notes else ""
                             self.output(f"    • [Topic {topic.id}] {status_str} - {topic.title}{notes_suffix}")
                             for note in notes:

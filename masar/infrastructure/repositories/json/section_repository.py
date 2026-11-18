@@ -1,6 +1,7 @@
 """JSON section repository implementation."""
 
 from pathlib import Path
+from typing import Any
 
 from masar.application.interfaces.repositories.section_repository import (
     SectionRepository,
@@ -21,14 +22,14 @@ class JsonSectionRepository(SectionRepository):
         else:
             self._storage = JsonStorage("masar_data.json")
 
-    def _to_entity(self, item: dict) -> Section:
+    def _to_entity(self, item: dict[str, Any]) -> Section:
         return Section(
             id=item["id"],
             journey_id=item["journey_id"],
             title=item["title"],
         )
 
-    def _to_dict(self, section: Section) -> dict:
+    def _to_dict(self, section: Section) -> dict[str, Any]:
         return {
             "id": section.id,
             "journey_id": section.journey_id,
