@@ -6,7 +6,7 @@ from masar.application.interfaces.repositories import (
     TopicRepository,
 )
 from masar.domain.exceptions import JourneyNotFoundError, SectionNotFoundError
-from masar.domain.models import Progress
+from masar.domain.models import Journey, Progress, Section
 
 
 class ProgressService:
@@ -49,3 +49,25 @@ class ProgressService:
                 completed += sum(1 for topic in topics if topic.is_completed)
 
         return Progress(completed_topics=completed, total_topics=total)
+
+    def calculate_journey_detailed_progress(
+        self, journey_id: int
+    ) -> tuple[Journey, Progress, list[tuple[Section, Progress]]]:
+        """Calculate progress for a journey along with per-section progress breakdown."""
+        journey = self._journey_repo.get_by_id(journey_id)
+        if journey is None:
+            raise JourneyNotFoundError(f"Journey with ID {journey_id} not found.")
+
+        sections = self._section_repo.get_by_journey_id(journey_id)
+        section_breakdown: list[tuple[Section, Progress]] = []
+        total = 0
+        completed = 0
+        for section in sections:
+            if section.id is not None:
+                sec_prog = self.calculate_section_progress(section.id)
+                section_breakdown.append((section, sec_prog))
+                total += sec_prog.total_topics
+                completed += sec_prog.completed_topics
+
+        overall = Progress(completed_topics=completed, total_topics=total)
+        return journey, overall, section_breakdown
