@@ -29,28 +29,35 @@ The project must follow a well-organized, layered architecture inspired by profe
 
 ### Initial Architectural Direction
 
-Use the following conceptual layers:
+Use the following conceptual layers and directory organization:
 
-1. **Presentation Layer**
-   - Handles CLI interaction.
-   - Displays information to users.
-   - Collects user input.
+1. **Domain Layer (`masar/domain/`)**
+   - Core business entities, models, and domain rules.
+   - Domain models are separated into individual files (`domain/models/journey.py`, `domain/models/section.py`, `domain/models/topic.py`).
+   - Domain exceptions are organized separately under `domain/exceptions/` (`base.py`, `journey.py`, `section.py`, `topic.py`).
+   - **Rule:** Domain must not depend on Application, Infrastructure, or Presentation.
 
-2. **Application Layer**
-   - Contains application use cases.
-   - Coordinates operations between the presentation, domain, and infrastructure layers.
-   - Handles application workflows.
+2. **Application Layer (`masar/application/`)**
+   - Application services and use cases organized into individual files (`application/services/journey_service.py`, `application/services/section_service.py`, `application/services/topic_service.py`).
+   - Repository abstractions (interfaces/abstract base classes) defined in `application/interfaces/repositories/` (`journey_repository.py`, `section_repository.py`, `topic_repository.py`).
+   - **Rule:** Application depends on Domain and repository abstractions. Application must NOT import or depend on concrete Infrastructure implementations.
 
-3. **Domain Layer**
-   - Contains core business entities and business rules.
-   - Remains independent of external technologies.
+3. **Infrastructure Layer (`masar/infrastructure/`)**
+   - Implements repository abstractions defined in the Application layer.
+   - Implementations are organized by technology (`infrastructure/repositories/in_memory/`, and later database/file adapters).
+   - **Rule:** Infrastructure may depend on Application interfaces and Domain models, but never on Presentation.
 
-4. **Infrastructure Layer**
-   - Handles data persistence.
-   - Implements repositories and external integrations.
-   - Initially uses JSON file storage.
+4. **Presentation Layer (`masar/presentation/`)**
+   - Handles CLI and user interaction (`presentation/cli.py`).
+   - Displays information to users and collects user input.
+   - **Rule:** Presentation depends on Application services and Domain models/exceptions.
 
-These layers must have clear responsibilities and appropriate dependency direction.
+5. **Composition Root & Dependency Injection (`masar/container.py`)**
+   - Instantiates concrete Infrastructure repositories and wires them into Application services.
+   - Injects wired services into the Presentation layer.
+   - Keeps layer boundaries decoupled without hardcoded infrastructure dependencies inside Application or Presentation.
+
+These layers must maintain strict inward dependency direction.
 
 The architecture should evolve when the application moves to FastAPI, PostgreSQL, and AI integration without unnecessary rewrites.
 

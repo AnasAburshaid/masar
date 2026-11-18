@@ -59,20 +59,49 @@ Masar follows a layered Clean Architecture structure:
 ```
 masar/
 ├── __init__.py
-├── __main__.py               # Entry point for 'python -m masar'
-├── presentation/             # Presentation layer (CLI, UI interaction)
+├── __main__.py                         # CLI entry point
+├── container.py                        # Composition root & DI wiring
+├── domain/                             # Core business entities & rules
 │   ├── __init__.py
-│   └── cli.py
-├── application/              # Application layer (use cases, workflow coordination)
-│   └── __init__.py
-├── domain/                   # Domain layer (business entities, rules)
-│   └── __init__.py
-└── infrastructure/           # Infrastructure layer (persistence, external APIs)
-    └── __init__.py
-tests/                        # Automated tests suite
-├── __init__.py
-└── test_cli.py
-pyproject.toml                # Project packaging and build configuration
+│   ├── models/                         # Domain models in individual files
+│   │   ├── __init__.py
+│   │   ├── journey.py
+│   │   ├── section.py
+│   │   └── topic.py
+│   └── exceptions/                     # Domain exceptions
+│       ├── __init__.py
+│       ├── base.py
+│       ├── journey.py
+│       ├── section.py
+│       └── topic.py
+├── application/                        # Use cases & workflow coordination
+│   ├── __init__.py
+│   ├── interfaces/                     # Abstractions (e.g., repository interfaces)
+│   │   ├── __init__.py
+│   │   └── repositories/
+│   │       ├── __init__.py
+│   │       ├── journey_repository.py
+│   │       ├── section_repository.py
+│   │       └── topic_repository.py
+│   └── services/                       # Application services
+│       ├── __init__.py
+│       ├── journey_service.py
+│       ├── section_service.py
+│       └── topic_service.py
+├── infrastructure/                     # Persistence & external adapters
+│   ├── __init__.py
+│   └── repositories/
+│       ├── __init__.py
+│       └── in_memory/                  # Concrete in-memory implementations
+│           ├── __init__.py
+│           ├── journey_repository.py
+│           ├── section_repository.py
+│           └── topic_repository.py
+└── presentation/                       # Presentation & CLI interaction
+    ├── __init__.py
+    └── cli.py
+tests/                                  # Automated tests suite
+pyproject.toml                          # Packaging and build configuration
 ```
 
 ## Getting Started

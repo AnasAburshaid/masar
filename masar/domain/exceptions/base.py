@@ -1,4 +1,4 @@
-"""Domain exceptions for Masar."""
+"""Base domain exceptions for Masar."""
 
 
 class DomainError(Exception):
@@ -11,7 +11,3 @@ class ValidationError(DomainError):
 
 class EntityNotFoundError(DomainError):
     """Raised when an entity is not found."""
-
-
-class JourneyNotFoundError(EntityNotFoundError):
-    """Raised when a specific journey is not found."""
