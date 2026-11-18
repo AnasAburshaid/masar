@@ -3,7 +3,7 @@
 import unittest
 
 from masar.domain.exceptions import ValidationError
-from masar.domain.models import Journey, Note, Section, Topic
+from masar.domain.models import Journey, Note, Progress, Section, Topic
 
 
 class TestJourneyDomain(unittest.TestCase):
@@ -149,6 +149,46 @@ class TestNoteDomain(unittest.TestCase):
         note = Note(topic_id=1, content="Original note")
         with self.assertRaises(ValidationError):
             note.update("   ")
+
+
+class TestProgressDomain(unittest.TestCase):
+    """Test cases for the Progress domain value object."""
+
+    def test_create_valid_progress(self) -> None:
+        progress = Progress(completed_topics=2, total_topics=5)
+        self.assertEqual(progress.completed_topics, 2)
+        self.assertEqual(progress.total_topics, 5)
+        self.assertEqual(progress.percentage, 40.0)
+        self.assertEqual(progress.formatted, "40.0% (2/5 topics)")
+        self.assertEqual(progress.progress_bar(), "[====      ]")
+
+    def test_zero_total_topics_progress(self) -> None:
+        progress = Progress(completed_topics=0, total_topics=0)
+        self.assertEqual(progress.percentage, 0.0)
+        self.assertEqual(progress.formatted, "0.0% (0/0 topics)")
+        self.assertEqual(progress.progress_bar(), "[          ]")
+
+    def test_full_progress(self) -> None:
+        progress = Progress(completed_topics=4, total_topics=4)
+        self.assertEqual(progress.percentage, 100.0)
+        self.assertEqual(progress.formatted, "100.0% (4/4 topics)")
+        self.assertEqual(progress.progress_bar(), "[==========]")
+
+    def test_negative_completed_raises_value_error(self) -> None:
+        with self.assertRaises(ValueError):
+            Progress(completed_topics=-1, total_topics=5)
+
+    def test_negative_total_raises_value_error(self) -> None:
+        with self.assertRaises(ValueError):
+            Progress(completed_topics=0, total_topics=-1)
+
+    def test_completed_exceeds_total_raises_value_error(self) -> None:
+        with self.assertRaises(ValueError):
+            Progress(completed_topics=6, total_topics=5)
+
+    def test_custom_progress_bar_width(self) -> None:
+        progress = Progress(completed_topics=1, total_topics=2)
+        self.assertEqual(progress.progress_bar(width=20), "[" + "=" * 10 + " " * 10 + "]")
 
 
 if __name__ == "__main__":

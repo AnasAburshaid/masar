@@ -67,6 +67,7 @@ masar/
 │   │   ├── __init__.py
 │   │   ├── journey.py
 │   │   ├── note.py
+│   │   ├── progress.py
 │   │   ├── section.py
 │   │   └── topic.py
 │   └── exceptions/                     # Domain exceptions
@@ -90,6 +91,7 @@ masar/
 │       ├── __init__.py
 │       ├── journey_service.py
 │       ├── note_service.py
+│       ├── progress_service.py
 │       ├── section_service.py
 │       └── topic_service.py
 ├── infrastructure/                     # Persistence & external adapters

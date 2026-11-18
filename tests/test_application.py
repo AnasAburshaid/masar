@@ -5,6 +5,7 @@ import unittest
 from masar.application.services import (
     JourneyService,
     NoteService,
+    ProgressService,
     SectionService,
     TopicService,
 )
@@ -327,6 +328,123 @@ class TestNoteService(unittest.TestCase):
 
         with self.assertRaises(NoteNotFoundError):
             self.service.delete_note(999)
+
+
+class TestProgressService(unittest.TestCase):
+    """Test suite for ProgressService."""
+
+    def setUp(self) -> None:
+        self.journey_repo = InMemoryJourneyRepository()
+        self.section_repo = InMemorySectionRepository()
+        self.topic_repo = InMemoryTopicRepository()
+        self.journey_service = JourneyService(self.journey_repo, self.section_repo, self.topic_repo)
+        self.section_service = SectionService(self.section_repo, self.journey_repo, self.topic_repo)
+        self.topic_service = TopicService(self.topic_repo, self.section_repo)
+        self.progress_service = ProgressService(
+            journey_repository=self.journey_repo,
+            section_repository=self.section_repo,
+            topic_repository=self.topic_repo,
+        )
+
+        self.journey = self.journey_service.create_journey("Python Journey", "Learn Python")
+        self.section = self.section_service.create_section(self.journey.id, "Basics")
+
+    def test_section_progress_no_topics(self) -> None:
+        progress = self.progress_service.calculate_section_progress(self.section.id)
+        self.assertEqual(progress.total_topics, 0)
+        self.assertEqual(progress.completed_topics, 0)
+        self.assertEqual(progress.percentage, 0.0)
+        self.assertEqual(progress.formatted, "0.0% (0/0 topics)")
+
+    def test_section_progress_with_topics(self) -> None:
+        t1 = self.topic_service.create_topic(self.section.id, "Variables")
+        t2 = self.topic_service.create_topic(self.section.id, "Control Flow")
+        t3 = self.topic_service.create_topic(self.section.id, "Functions")
+
+        self.topic_service.set_topic_completion(t1.id, True)
+
+        progress = self.progress_service.calculate_section_progress(self.section.id)
+        self.assertEqual(progress.total_topics, 3)
+        self.assertEqual(progress.completed_topics, 1)
+        self.assertEqual(progress.percentage, 33.3)
+        self.assertEqual(progress.formatted, "33.3% (1/3 topics)")
+
+    def test_section_progress_all_completed(self) -> None:
+        t1 = self.topic_service.create_topic(self.section.id, "Variables")
+        t2 = self.topic_service.create_topic(self.section.id, "Control Flow")
+
+        self.topic_service.set_topic_completion(t1.id, True)
+        self.topic_service.set_topic_completion(t2.id, True)
+
+        progress = self.progress_service.calculate_section_progress(self.section.id)
+        self.assertEqual(progress.percentage, 100.0)
+        self.assertEqual(progress.completed_topics, 2)
+        self.assertEqual(progress.total_topics, 2)
+
+    def test_section_progress_nonexistent_section_raises(self) -> None:
+        with self.assertRaises(SectionNotFoundError):
+            self.progress_service.calculate_section_progress(999)
+
+    def test_journey_progress_no_sections(self) -> None:
+        empty_journey = self.journey_service.create_journey("Empty Journey")
+        progress = self.progress_service.calculate_journey_progress(empty_journey.id)
+        self.assertEqual(progress.total_topics, 0)
+        self.assertEqual(progress.completed_topics, 0)
+        self.assertEqual(progress.percentage, 0.0)
+        self.assertEqual(progress.formatted, "0.0% (0/0 topics)")
+
+    def test_journey_progress_empty_sections(self) -> None:
+        self.section_service.create_section(self.journey.id, "Advanced")
+        progress = self.progress_service.calculate_journey_progress(self.journey.id)
+        self.assertEqual(progress.total_topics, 0)
+        self.assertEqual(progress.completed_topics, 0)
+        self.assertEqual(progress.percentage, 0.0)
+
+    def test_journey_progress_across_multiple_sections(self) -> None:
+        # Section 1 has 2 topics (1 completed)
+        t1 = self.topic_service.create_topic(self.section.id, "Variables")
+        t2 = self.topic_service.create_topic(self.section.id, "Types")
+        self.topic_service.set_topic_completion(t1.id, True)
+
+        # Section 2 has 3 topics (2 completed)
+        sec2 = self.section_service.create_section(self.journey.id, "OOP")
+        t3 = self.topic_service.create_topic(sec2.id, "Classes")
+        t4 = self.topic_service.create_topic(sec2.id, "Inheritance")
+        t5 = self.topic_service.create_topic(sec2.id, "Polymorphism")
+        self.topic_service.set_topic_completion(t3.id, True)
+        self.topic_service.set_topic_completion(t4.id, True)
+
+        progress = self.progress_service.calculate_journey_progress(self.journey.id)
+        self.assertEqual(progress.total_topics, 5)
+        self.assertEqual(progress.completed_topics, 3)
+        self.assertEqual(progress.percentage, 60.0)
+        self.assertEqual(progress.formatted, "60.0% (3/5 topics)")
+
+    def test_journey_progress_dynamic_updates(self) -> None:
+        t1 = self.topic_service.create_topic(self.section.id, "Variables")
+        t2 = self.topic_service.create_topic(self.section.id, "Types")
+
+        p1 = self.progress_service.calculate_journey_progress(self.journey.id)
+        self.assertEqual(p1.percentage, 0.0)
+
+        # Mark completed -> 50%
+        self.topic_service.set_topic_completion(t1.id, True)
+        p2 = self.progress_service.calculate_journey_progress(self.journey.id)
+        self.assertEqual(p2.percentage, 50.0)
+
+        # Mark second completed -> 100%
+        self.topic_service.set_topic_completion(t2.id, True)
+        p3 = self.progress_service.calculate_journey_progress(self.journey.id)
+        self.assertEqual(p3.percentage, 100.0)
+
+        # Mark pending -> back to 50%
+        self.topic_service.set_topic_completion(t1.id, False)
+        p4 = self.progress_service.calculate_journey_progress(self.journey.id)
+        self.assertEqual(p4.percentage, 50.0)
+
+    def test_journey_progress_nonexistent_journey_raises(self) -> None:
+        with self.assertRaises(JourneyNotFoundError):
+            self.progress_service.calculate_journey_progress(999)
 
 
 if __name__ == "__main__":

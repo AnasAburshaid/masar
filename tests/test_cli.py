@@ -286,6 +286,98 @@ class TestCLI(unittest.TestCase):
         self.assertIn("(1 notes)", combined_output)
         self.assertIn("[Note 1] Dynamically typed variables in Python", combined_output)
 
+    def test_cli_learning_progress_workflow(self) -> None:
+        """Simulate interactive session testing progress calculations, breakdown, and dynamic updates."""
+        journey_repo = InMemoryJourneyRepository()
+        section_repo = InMemorySectionRepository()
+        topic_repo = InMemoryTopicRepository()
+        note_repo = InMemoryNoteRepository()
+
+        j_service = JourneyService(journey_repo, section_repo, topic_repo, note_repo)
+        s_service = SectionService(section_repo, journey_repo, topic_repo, note_repo)
+        t_service = TopicService(topic_repo, section_repo, note_repo)
+        n_service = NoteService(note_repo, topic_repo)
+
+        journey = j_service.create_journey(title="Fullstack Development")
+        sec1 = s_service.create_section(journey.id, "Frontend")
+        sec2 = s_service.create_section(journey.id, "Backend")
+
+        t1 = t_service.create_topic(sec1.id, "HTML & CSS")
+        t2 = t_service.create_topic(sec1.id, "JavaScript")
+        t3 = t_service.create_topic(sec2.id, "Python")
+        t4 = t_service.create_topic(sec2.id, "Databases")
+
+        simulated_inputs = [
+            # 1. View all journeys (shows 0.0% (0/4 topics))
+            "1",
+            # 2. View journey details (shows overall progress and section progress)
+            "2", str(journey.id),
+            # 3. View learning progress menu option 9 for non-existent journey
+            "9", "999",
+            # 4. View learning progress menu option 9 for valid journey
+            "9", str(journey.id),
+            # 5. Mark topics completed: Frontend t1, t2 -> section 1 is 100%, journey is 50%
+            "7", "4", str(t1.id), "0",
+            "7", "4", str(t2.id), "0",
+            # 6. View learning progress again (verify 50.0% (2/4 topics))
+            "9", str(journey.id),
+            # 7. Mark backend topic t3 completed -> 75%
+            "7", "4", str(t3.id), "0",
+            # 8. View learning progress again (verify 75.0% (3/4 topics))
+            "9", str(journey.id),
+            # 9. Mark backend topic t3 pending -> back to 50%
+            "7", "5", str(t3.id), "0",
+            # 10. View journey details to verify dynamic reflection in details
+            "2", str(journey.id),
+            # 11. Exit
+            "0",
+        ]
+
+        output_records: list[str] = []
+
+        def fake_input(prompt: str = "") -> str:
+            if not simulated_inputs:
+                raise EOFError()
+            return simulated_inputs.pop(0)
+
+        def fake_output(*args: object) -> None:
+            output_records.append(" ".join(str(a) for a in args))
+
+        cli = CLI(
+            journey_service=j_service,
+            section_service=s_service,
+            topic_service=t_service,
+            note_service=n_service,
+            input_func=fake_input,
+            output_func=fake_output,
+        )
+        exit_code = cli.run()
+        self.assertEqual(exit_code, 0)
+
+        combined_output = "\n".join(output_records)
+
+        # Progress menu option in main menu
+        self.assertIn("9. View learning progress", combined_output)
+
+        # Non-existent journey error
+        self.assertIn("Error: Journey with ID 999 was not found.", combined_output)
+
+        # Initial progress (0/4 topics)
+        self.assertIn("0.0% (0/4 topics)", combined_output)
+        self.assertIn("[          ]", combined_output)
+
+        # Progress after completing 2 topics (50%)
+        self.assertIn("50.0% (2/4 topics)", combined_output)
+        self.assertIn("100.0% (2/2 topics)", combined_output)
+
+        # Progress after completing 3rd topic (75%)
+        self.assertIn("75.0% (3/4 topics)", combined_output)
+
+        # Section breakdown
+        self.assertIn("Section Breakdown:", combined_output)
+        self.assertIn(f"[Section {sec1.id}] Frontend", combined_output)
+        self.assertIn(f"[Section {sec2.id}] Backend", combined_output)
+
 
 if __name__ == "__main__":
     unittest.main()
