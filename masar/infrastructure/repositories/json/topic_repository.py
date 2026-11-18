@@ -1,6 +1,7 @@
 """JSON topic repository implementation."""
 
 from pathlib import Path
+from typing import Any
 
 from masar.application.interfaces.repositories.topic_repository import TopicRepository
 from masar.domain.exceptions import TopicNotFoundError
@@ -19,7 +20,7 @@ class JsonTopicRepository(TopicRepository):
         else:
             self._storage = JsonStorage("masar_data.json")
 
-    def _to_entity(self, item: dict) -> Topic:
+    def _to_entity(self, item: dict[str, Any]) -> Topic:
         return Topic(
             id=item["id"],
             section_id=item["section_id"],
@@ -27,7 +28,7 @@ class JsonTopicRepository(TopicRepository):
             is_completed=item.get("is_completed", False),
         )
 
-    def _to_dict(self, topic: Topic) -> dict:
+    def _to_dict(self, topic: Topic) -> dict[str, Any]:
         return {
             "id": topic.id,
             "section_id": topic.section_id,
