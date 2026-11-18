@@ -42,6 +42,21 @@ class TestArchitectureAndDependencyDirection(unittest.TestCase):
                     f"Domain file {py_file.name} illegal import: {imp}",
                 )
 
+    def test_domain_layer_does_not_import_pydantic(self) -> None:
+        """Domain models must remain strictly independent of Pydantic."""
+        domain_dir = self.root / "domain"
+        for py_file in domain_dir.rglob("*.py"):
+            imports = self._get_imports(py_file)
+            for imp in imports:
+                self.assertFalse(
+                    imp == "pydantic" or imp.startswith("pydantic."),
+                    f"Domain file {py_file.name} illegally imports Pydantic: {imp}",
+                )
+                self.assertFalse(
+                    imp == "pydantic_settings" or imp.startswith("pydantic_settings."),
+                    f"Domain file {py_file.name} illegally imports Pydantic Settings: {imp}",
+                )
+
     def test_application_layer_does_not_import_infrastructure(self) -> None:
         """Application must depend on Domain and abstractions, never concrete Infrastructure."""
         app_dir = self.root / "application"

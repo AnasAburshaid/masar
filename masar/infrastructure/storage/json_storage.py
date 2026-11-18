@@ -6,6 +6,9 @@ from pathlib import Path
 import tempfile
 from typing import Any
 
+from pydantic import ValidationError as PydanticValidationError
+
+from masar.application.schemas.storage import validate_storage_data
 from masar.domain.exceptions import (
     CorruptedStorageError,
     StorageAccessError,
@@ -54,6 +57,13 @@ class JsonStorage:
         for key in DEFAULT_SCHEMA:
             if key not in data or not isinstance(data[key], list):
                 data[key] = []
+
+        try:
+            validate_storage_data(data)
+        except PydanticValidationError as err:
+            raise CorruptedStorageError(
+                f"Corrupted or invalid schema in storage file '{self.file_path}': {err}"
+            ) from err
 
         return data
 

@@ -15,7 +15,10 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
-dependencies = []
+dependencies = [
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+]
 
 [project.scripts]
 masar = "masar.presentation.cli:main"
