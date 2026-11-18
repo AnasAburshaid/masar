@@ -15,3 +15,11 @@ class EntityNotFoundError(DomainError):
 
 class JourneyNotFoundError(EntityNotFoundError):
     """Raised when a specific journey is not found."""
+
+
+class SectionNotFoundError(EntityNotFoundError):
+    """Raised when a specific section is not found."""
+
+
+class TopicNotFoundError(EntityNotFoundError):
+    """Raised when a specific topic is not found."""

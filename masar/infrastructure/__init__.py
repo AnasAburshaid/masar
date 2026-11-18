@@ -2,7 +2,18 @@
 
 from masar.infrastructure.repositories import (
     InMemoryJourneyRepository,
+    InMemorySectionRepository,
+    InMemoryTopicRepository,
     JourneyRepository,
+    SectionRepository,
+    TopicRepository,
 )
 
-__all__ = ["InMemoryJourneyRepository", "JourneyRepository"]
+__all__ = [
+    "InMemoryJourneyRepository",
+    "InMemorySectionRepository",
+    "InMemoryTopicRepository",
+    "JourneyRepository",
+    "SectionRepository",
+    "TopicRepository",
+]
