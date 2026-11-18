@@ -3,7 +3,12 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-from masar.domain.exceptions import ValidationError
+from masar.domain.exceptions import (
+    EmptyFieldError,
+    FieldLengthError,
+    InvalidIdError,
+    ValidationError,
+)
 
 
 @dataclass
@@ -15,15 +20,24 @@ class Journey:
     id: int | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
+    MAX_TITLE_LENGTH: int = 100
+    MAX_DESCRIPTION_LENGTH: int = 1000
+
     def __post_init__(self) -> None:
         self.validate()
 
     def validate(self) -> None:
         """Validate journey business rules."""
+        if self.id is not None and self.id <= 0:
+            raise InvalidIdError("Journey ID must be a positive integer.")
         if not self.title or not self.title.strip():
-            raise ValidationError("Journey title cannot be empty.")
+            raise EmptyFieldError("Journey title cannot be empty.")
         self.title = self.title.strip()
+        if len(self.title) > self.MAX_TITLE_LENGTH:
+            raise FieldLengthError(f"Journey title cannot exceed {self.MAX_TITLE_LENGTH} characters.")
         self.description = self.description.strip() if self.description else ""
+        if len(self.description) > self.MAX_DESCRIPTION_LENGTH:
+            raise FieldLengthError(f"Journey description cannot exceed {self.MAX_DESCRIPTION_LENGTH} characters.")
 
     def update(self, title: str, description: str = "") -> None:
         """Update journey title and description."""
