@@ -15,6 +15,7 @@ from masar.application.services import (
     SectionService,
     TopicService,
 )
+from masar.config.settings import Settings, get_settings
 from masar.infrastructure.repositories.in_memory import (
     InMemoryJourneyRepository,
     InMemoryNoteRepository,
@@ -32,30 +33,35 @@ from masar.presentation.cli import CLI
 
 
 def build_container(
-    storage_type: str = "json",
+    storage_type: str | None = None,
     data_file: str | Path | None = None,
+    settings: Settings | None = None,
 ) -> tuple[
     JourneyService, SectionService, TopicService, NoteService, ProgressService
 ]:
     """Instantiate and wire up concrete repositories and application services."""
+    active_settings = settings or get_settings()
+    resolved_storage = storage_type if storage_type is not None else active_settings.storage_type
+    resolved_data_file = data_file if data_file is not None else active_settings.data_file
+
     journey_repo: JourneyRepository
     section_repo: SectionRepository
     topic_repo: TopicRepository
     note_repo: NoteRepository
 
-    if storage_type == "json":
-        storage = JsonStorage(data_file or "masar_data.json")
+    if resolved_storage == "json":
+        storage = JsonStorage(resolved_data_file)
         journey_repo = JsonJourneyRepository(storage)
         section_repo = JsonSectionRepository(storage)
         topic_repo = JsonTopicRepository(storage)
         note_repo = JsonNoteRepository(storage)
-    elif storage_type == "in_memory":
+    elif resolved_storage == "in_memory":
         journey_repo = InMemoryJourneyRepository()
         section_repo = InMemorySectionRepository()
         topic_repo = InMemoryTopicRepository()
         note_repo = InMemoryNoteRepository()
     else:
-        raise ValueError(f"Unknown storage type: {storage_type}")
+        raise ValueError(f"Unknown storage type: {resolved_storage}")
 
     journey_service = JourneyService(
         repository=journey_repo,
@@ -93,8 +99,9 @@ def build_container(
 
 
 def build_cli(
-    storage_type: str = "json",
+    storage_type: str | None = None,
     data_file: str | Path | None = None,
+    settings: Settings | None = None,
 ) -> CLI:
     """Build and configure the CLI presentation with wired application services."""
     (
@@ -103,7 +110,11 @@ def build_cli(
         topic_service,
         note_service,
         progress_service,
-    ) = build_container(storage_type=storage_type, data_file=data_file)
+    ) = build_container(
+        storage_type=storage_type,
+        data_file=data_file,
+        settings=settings,
+    )
     return CLI(
         journey_service=journey_service,
         section_service=section_service,
