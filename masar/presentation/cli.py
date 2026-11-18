@@ -10,11 +10,6 @@ from masar.domain.exceptions import (
     TopicNotFoundError,
     ValidationError,
 )
-from masar.infrastructure.repositories import (
-    InMemoryJourneyRepository,
-    InMemorySectionRepository,
-    InMemoryTopicRepository,
-)
 
 
 class CLI:
@@ -29,16 +24,12 @@ class CLI:
         output_func: Callable[..., None] = print,
     ) -> None:
         if journey_service is None or section_service is None or topic_service is None:
-            journey_repo = InMemoryJourneyRepository()
-            section_repo = InMemorySectionRepository()
-            topic_repo = InMemoryTopicRepository()
-            self.journey_service = journey_service or JourneyService(
-                journey_repo, section_repo, topic_repo
-            )
-            self.section_service = section_service or SectionService(
-                section_repo, journey_repo, topic_repo
-            )
-            self.topic_service = topic_service or TopicService(topic_repo, section_repo)
+            from masar.container import build_container
+
+            default_j, default_s, default_t = build_container()
+            self.journey_service = journey_service or default_j
+            self.section_service = section_service or default_s
+            self.topic_service = topic_service or default_t
         else:
             self.journey_service = journey_service
             self.section_service = section_service
@@ -380,7 +371,9 @@ class CLI:
 
 def main(args: list[str] | None = None) -> int:
     """Entry point for presentation CLI."""
-    cli = CLI()
+    from masar.container import build_cli
+
+    cli = build_cli()
     return cli.run()
 
 
