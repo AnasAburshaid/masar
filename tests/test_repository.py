@@ -4,12 +4,14 @@ import unittest
 
 from masar.domain.exceptions import (
     JourneyNotFoundError,
+    NoteNotFoundError,
     SectionNotFoundError,
     TopicNotFoundError,
 )
-from masar.domain.models import Journey, Section, Topic
+from masar.domain.models import Journey, Note, Section, Topic
 from masar.infrastructure.repositories import (
     InMemoryJourneyRepository,
+    InMemoryNoteRepository,
     InMemorySectionRepository,
     InMemoryTopicRepository,
 )
@@ -157,6 +159,53 @@ class TestInMemoryTopicRepository(unittest.TestCase):
         self.assertEqual(count, 2)
         self.assertEqual(len(self.repo.get_by_section_id(1)), 0)
         self.assertEqual(len(self.repo.get_by_section_id(2)), 1)
+
+
+class TestInMemoryNoteRepository(unittest.TestCase):
+    """Test suite for InMemoryNoteRepository."""
+
+    def setUp(self) -> None:
+        self.repo = InMemoryNoteRepository()
+
+    def test_add_and_get_by_id(self) -> None:
+        n1 = self.repo.add(Note(topic_id=1, content="Note 1"))
+        self.assertEqual(n1.id, 1)
+        self.assertEqual(self.repo.get_by_id(1).content, "Note 1")
+        self.assertIsNone(self.repo.get_by_id(999))
+
+    def test_get_by_topic_id(self) -> None:
+        self.repo.add(Note(topic_id=1, content="N1"))
+        self.repo.add(Note(topic_id=1, content="N2"))
+        self.repo.add(Note(topic_id=2, content="N3"))
+
+        t1_notes = self.repo.get_by_topic_id(1)
+        self.assertEqual(len(t1_notes), 2)
+        self.assertEqual([n.content for n in t1_notes], ["N1", "N2"])
+
+    def test_update_note(self) -> None:
+        n = self.repo.add(Note(topic_id=1, content="Initial Content"))
+        n.content = "Updated Content"
+        updated = self.repo.update(n)
+        self.assertEqual(updated.content, "Updated Content")
+
+        fake = Note(topic_id=1, content="Ghost", id=999)
+        with self.assertRaises(NoteNotFoundError):
+            self.repo.update(fake)
+
+    def test_delete_note(self) -> None:
+        n = self.repo.add(Note(topic_id=1, content="To Delete"))
+        self.assertTrue(self.repo.delete(n.id))
+        self.assertFalse(self.repo.delete(n.id))
+
+    def test_delete_by_topic_id(self) -> None:
+        self.repo.add(Note(topic_id=1, content="N1"))
+        self.repo.add(Note(topic_id=1, content="N2"))
+        self.repo.add(Note(topic_id=2, content="N3"))
+
+        count = self.repo.delete_by_topic_id(1)
+        self.assertEqual(count, 2)
+        self.assertEqual(len(self.repo.get_by_topic_id(1)), 0)
+        self.assertEqual(len(self.repo.get_by_topic_id(2)), 1)
 
 
 if __name__ == "__main__":

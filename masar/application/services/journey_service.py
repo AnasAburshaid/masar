@@ -3,6 +3,7 @@
 from masar.application.interfaces.repositories.journey_repository import (
     JourneyRepository,
 )
+from masar.application.interfaces.repositories.note_repository import NoteRepository
 from masar.application.interfaces.repositories.section_repository import (
     SectionRepository,
 )
@@ -19,10 +20,12 @@ class JourneyService:
         repository: JourneyRepository,
         section_repository: SectionRepository | None = None,
         topic_repository: TopicRepository | None = None,
+        note_repository: NoteRepository | None = None,
     ) -> None:
         self._repository = repository
         self._section_repository = section_repository
         self._topic_repository = topic_repository
+        self._note_repository = note_repository
 
     def create_journey(self, title: str, description: str = "") -> Journey:
         """Create a new learning journey."""
@@ -47,14 +50,19 @@ class JourneyService:
         return self._repository.update(journey)
 
     def delete_journey(self, journey_id: int) -> None:
-        """Delete a journey by ID and cascade delete associated sections/topics."""
+        """Delete a journey by ID and cascade delete associated sections/topics/notes."""
         self.get_journey(journey_id)
 
-        # Cascade delete sections and topics if repositories are attached
+        # Cascade delete sections, topics, and notes if repositories are attached
         if self._section_repository:
             sections = self._section_repository.get_by_journey_id(journey_id)
             for section in sections:
                 if self._topic_repository and section.id is not None:
+                    if self._note_repository:
+                        topics = self._topic_repository.get_by_section_id(section.id)
+                        for topic in topics:
+                            if topic.id is not None:
+                                self._note_repository.delete_by_topic_id(topic.id)
                     self._topic_repository.delete_by_section_id(section.id)
                 if section.id is not None:
                     self._section_repository.delete(section.id)

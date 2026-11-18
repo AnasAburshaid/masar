@@ -3,6 +3,7 @@
 from masar.application.interfaces.repositories.journey_repository import (
     JourneyRepository,
 )
+from masar.application.interfaces.repositories.note_repository import NoteRepository
 from masar.application.interfaces.repositories.section_repository import (
     SectionRepository,
 )
@@ -19,10 +20,12 @@ class SectionService:
         section_repository: SectionRepository,
         journey_repository: JourneyRepository | None = None,
         topic_repository: TopicRepository | None = None,
+        note_repository: NoteRepository | None = None,
     ) -> None:
         self._section_repository = section_repository
         self._journey_repository = journey_repository
         self._topic_repository = topic_repository
+        self._note_repository = note_repository
 
     def create_section(self, journey_id: int, title: str) -> Section:
         """Create a new section inside a learning journey."""
@@ -57,10 +60,15 @@ class SectionService:
         return self._section_repository.update(section)
 
     def delete_section(self, section_id: int) -> None:
-        """Delete a section and cascade delete its topics."""
+        """Delete a section and cascade delete its topics and notes."""
         self.get_section(section_id)
 
         if self._topic_repository:
+            if self._note_repository:
+                topics = self._topic_repository.get_by_section_id(section_id)
+                for topic in topics:
+                    if topic.id is not None:
+                        self._note_repository.delete_by_topic_id(topic.id)
             self._topic_repository.delete_by_section_id(section_id)
 
         deleted = self._section_repository.delete(section_id)
