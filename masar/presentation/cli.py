@@ -3,9 +3,15 @@
 import sys
 from typing import Callable
 
-from masar.application.services import JourneyService, SectionService, TopicService
+from masar.application.services import (
+    JourneyService,
+    NoteService,
+    SectionService,
+    TopicService,
+)
 from masar.domain.exceptions import (
     JourneyNotFoundError,
+    NoteNotFoundError,
     SectionNotFoundError,
     TopicNotFoundError,
     ValidationError,
@@ -20,20 +26,28 @@ class CLI:
         journey_service: JourneyService | None = None,
         section_service: SectionService | None = None,
         topic_service: TopicService | None = None,
+        note_service: NoteService | None = None,
         input_func: Callable[[str], str] = input,
         output_func: Callable[..., None] = print,
     ) -> None:
-        if journey_service is None or section_service is None or topic_service is None:
+        if (
+            journey_service is None
+            or section_service is None
+            or topic_service is None
+            or note_service is None
+        ):
             from masar.container import build_container
 
-            default_j, default_s, default_t = build_container()
+            default_j, default_s, default_t, default_n = build_container()
             self.journey_service = journey_service or default_j
             self.section_service = section_service or default_s
             self.topic_service = topic_service or default_t
+            self.note_service = note_service or default_n
         else:
             self.journey_service = journey_service
             self.section_service = section_service
             self.topic_service = topic_service
+            self.note_service = note_service
 
         # Backward compatibility alias
         self.service = self.journey_service
@@ -62,6 +76,7 @@ class CLI:
         self.output("5. Delete a journey")
         self.output("6. Manage sections")
         self.output("7. Manage topics")
+        self.output("8. Manage notes")
         self.output("0. Exit")
 
     # --- Journey Handlers ---
@@ -78,7 +93,7 @@ class CLI:
             self.output(f"[{journey.id}] {journey.title}")
 
     def handle_view_journey(self) -> None:
-        """Display details of a specific journey including sections and topics."""
+        """Display details of a specific journey including sections, topics, and notes."""
         journey_id = self._parse_id(self.input("Enter journey ID: "))
         if journey_id is None:
             return
@@ -105,7 +120,11 @@ class CLI:
                     else:
                         for topic in topics:
                             status_str = "[✓] Completed" if topic.is_completed else "[ ] Pending"
-                            self.output(f"    • [Topic {topic.id}] {status_str} - {topic.title}")
+                            notes = self.note_service.list_notes(topic.id)  # type: ignore[arg-type]
+                            notes_suffix = f" ({len(notes)} notes)" if notes else ""
+                            self.output(f"    • [Topic {topic.id}] {status_str} - {topic.title}{notes_suffix}")
+                            for note in notes:
+                                self.output(f"      - [Note {note.id}] {note.content}")
         except JourneyNotFoundError as err:
             self.output(f"Error: {err}")
 
@@ -335,6 +354,88 @@ class CLI:
         except TopicNotFoundError as err:
             self.output(f"Error: {err}")
 
+    # --- Note Handlers ---
+
+    def handle_notes_menu(self) -> None:
+        """Submenu for managing notes attached to topics."""
+        while True:
+            self.output("\n--- Manage Notes ---")
+            self.output("1. List notes for a topic")
+            self.output("2. Add note to a topic")
+            self.output("3. Edit a note")
+            self.output("4. Delete a note")
+            self.output("0. Back to main menu")
+
+            choice = self.input("Enter choice: ").strip()
+            if choice == "1":
+                self.handle_list_notes()
+            elif choice == "2":
+                self.handle_create_note()
+            elif choice == "3":
+                self.handle_edit_note()
+            elif choice == "4":
+                self.handle_delete_note()
+            elif choice == "0":
+                break
+            else:
+                self.output("Error: Invalid choice. Please choose a valid option.")
+
+    def handle_list_notes(self) -> None:
+        """List notes for a given topic."""
+        topic_id = self._parse_id(self.input("Enter topic ID: "))
+        if topic_id is None:
+            return
+
+        try:
+            notes = self.note_service.list_notes(topic_id)
+            if not notes:
+                self.output(f"No notes found for topic [{topic_id}].")
+                return
+
+            self.output(f"\n--- Notes for Topic [{topic_id}] ---")
+            for note in notes:
+                self.output(f"[Note {note.id}] {note.content}")
+        except TopicNotFoundError as err:
+            self.output(f"Error: {err}")
+
+    def handle_create_note(self) -> None:
+        """Add a note to a topic."""
+        topic_id = self._parse_id(self.input("Enter topic ID: "))
+        if topic_id is None:
+            return
+
+        content = self.input("Enter note content: ")
+        try:
+            note = self.note_service.create_note(topic_id, content)
+            self.output(f"Success: Note created with ID {note.id} for topic [{topic_id}].")
+        except (TopicNotFoundError, ValidationError) as err:
+            self.output(f"Error: {err}")
+
+    def handle_edit_note(self) -> None:
+        """Edit an existing note."""
+        note_id = self._parse_id(self.input("Enter note ID to edit: "))
+        if note_id is None:
+            return
+
+        content = self.input("Enter new note content: ")
+        try:
+            note = self.note_service.update_note(note_id, content)
+            self.output(f"Success: Note [{note.id}] updated successfully.")
+        except (NoteNotFoundError, ValidationError) as err:
+            self.output(f"Error: {err}")
+
+    def handle_delete_note(self) -> None:
+        """Delete a note."""
+        note_id = self._parse_id(self.input("Enter note ID to delete: "))
+        if note_id is None:
+            return
+
+        try:
+            self.note_service.delete_note(note_id)
+            self.output(f"Success: Note [{note_id}] deleted successfully.")
+        except NoteNotFoundError as err:
+            self.output(f"Error: {err}")
+
     # --- Main Loop ---
 
     def run(self) -> int:
@@ -358,6 +459,8 @@ class CLI:
                     self.handle_sections_menu()
                 elif choice == "7":
                     self.handle_topics_menu()
+                elif choice == "8":
+                    self.handle_notes_menu()
                 elif choice == "0":
                     self.output("Goodbye!")
                     break

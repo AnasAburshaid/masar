@@ -6,9 +6,15 @@ import unittest
 from io import StringIO
 from unittest.mock import patch
 
-from masar.application.services import JourneyService, SectionService, TopicService
+from masar.application.services import (
+    JourneyService,
+    NoteService,
+    SectionService,
+    TopicService,
+)
 from masar.infrastructure.repositories import (
     InMemoryJourneyRepository,
+    InMemoryNoteRepository,
     InMemorySectionRepository,
     InMemoryTopicRepository,
 )
@@ -44,9 +50,11 @@ class TestCLI(unittest.TestCase):
         journey_repo = InMemoryJourneyRepository()
         section_repo = InMemorySectionRepository()
         topic_repo = InMemoryTopicRepository()
-        j_service = JourneyService(journey_repo, section_repo, topic_repo)
-        s_service = SectionService(section_repo, journey_repo, topic_repo)
-        t_service = TopicService(topic_repo, section_repo)
+        note_repo = InMemoryNoteRepository()
+        j_service = JourneyService(journey_repo, section_repo, topic_repo, note_repo)
+        s_service = SectionService(section_repo, journey_repo, topic_repo, note_repo)
+        t_service = TopicService(topic_repo, section_repo, note_repo)
+        n_service = NoteService(note_repo, topic_repo)
 
         simulated_inputs = [
             "1",                # List empty
@@ -77,6 +85,7 @@ class TestCLI(unittest.TestCase):
             journey_service=j_service,
             section_service=s_service,
             topic_service=t_service,
+            note_service=n_service,
             input_func=fake_input,
             output_func=fake_output,
         )
@@ -104,9 +113,11 @@ class TestCLI(unittest.TestCase):
         journey_repo = InMemoryJourneyRepository()
         section_repo = InMemorySectionRepository()
         topic_repo = InMemoryTopicRepository()
-        j_service = JourneyService(journey_repo, section_repo, topic_repo)
-        s_service = SectionService(section_repo, journey_repo, topic_repo)
-        t_service = TopicService(topic_repo, section_repo)
+        note_repo = InMemoryNoteRepository()
+        j_service = JourneyService(journey_repo, section_repo, topic_repo, note_repo)
+        s_service = SectionService(section_repo, journey_repo, topic_repo, note_repo)
+        t_service = TopicService(topic_repo, section_repo, note_repo)
+        n_service = NoteService(note_repo, topic_repo)
 
         # 1. Create a journey
         journey = j_service.create_journey(title="Python Track")
@@ -163,6 +174,7 @@ class TestCLI(unittest.TestCase):
             journey_service=j_service,
             section_service=s_service,
             topic_service=t_service,
+            note_service=n_service,
             input_func=fake_input,
             output_func=fake_output,
         )
@@ -196,6 +208,83 @@ class TestCLI(unittest.TestCase):
 
         # Delete section verification
         self.assertIn("Success: Section [1] deleted successfully.", combined_output)
+
+    def test_cli_notes_workflow(self) -> None:
+        """Simulate interactive session testing notes management workflow."""
+        journey_repo = InMemoryJourneyRepository()
+        section_repo = InMemorySectionRepository()
+        topic_repo = InMemoryTopicRepository()
+        note_repo = InMemoryNoteRepository()
+
+        j_service = JourneyService(journey_repo, section_repo, topic_repo, note_repo)
+        s_service = SectionService(section_repo, journey_repo, topic_repo, note_repo)
+        t_service = TopicService(topic_repo, section_repo, note_repo)
+        n_service = NoteService(note_repo, topic_repo)
+
+        journey = j_service.create_journey(title="Python Track")
+        section = s_service.create_section(journey.id, "Basics")
+        topic = t_service.create_topic(section.id, "Variables")
+
+        simulated_inputs = [
+            # Manage notes menu
+            "8",
+            "1", str(topic.id),                 # List notes (empty)
+            "2", "999", "Orphan note",          # Add note to non-existent topic
+            "2", str(topic.id), "   ",          # Add note with empty content
+            "2", str(topic.id), "Dynamic typing", # Add note 1
+            "2", str(topic.id), "Memory model",   # Add note 2
+            "1", str(topic.id),                 # List notes (should show 2 notes)
+            "3", "1", "Dynamically typed variables in Python", # Edit note 1
+            "3", "999", "Non-existent note",    # Edit non-existent note
+            "4", "2",                           # Delete note 2
+            "4", "999",                         # Delete non-existent note
+            "0",                                # Back to main menu
+
+            # View journey details (should display the topic and its remaining note)
+            "2", str(journey.id),
+
+            # Exit
+            "0",
+        ]
+
+        output_records: list[str] = []
+
+        def fake_input(prompt: str = "") -> str:
+            if not simulated_inputs:
+                raise EOFError()
+            return simulated_inputs.pop(0)
+
+        def fake_output(*args: object) -> None:
+            output_records.append(" ".join(str(a) for a in args))
+
+        cli = CLI(
+            journey_service=j_service,
+            section_service=s_service,
+            topic_service=t_service,
+            note_service=n_service,
+            input_func=fake_input,
+            output_func=fake_output,
+        )
+        exit_code = cli.run()
+        self.assertEqual(exit_code, 0)
+
+        combined_output = "\n".join(output_records)
+
+        # Note validations and assertions
+        self.assertIn("No notes found for topic [1].", combined_output)
+        self.assertIn("Error: Topic with ID 999 was not found.", combined_output)
+        self.assertIn("Error: Note content cannot be empty.", combined_output)
+        self.assertIn("Success: Note created with ID 1 for topic [1].", combined_output)
+        self.assertIn("Success: Note created with ID 2 for topic [1].", combined_output)
+        self.assertIn("[Note 1] Dynamic typing", combined_output)
+        self.assertIn("[Note 2] Memory model", combined_output)
+        self.assertIn("Success: Note [1] updated successfully.", combined_output)
+        self.assertIn("Error: Note with ID 999 was not found.", combined_output)
+        self.assertIn("Success: Note [2] deleted successfully.", combined_output)
+
+        # Journey details displaying note
+        self.assertIn("(1 notes)", combined_output)
+        self.assertIn("[Note 1] Dynamically typed variables in Python", combined_output)
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@
 import unittest
 
 from masar.domain.exceptions import ValidationError
-from masar.domain.models import Journey, Section, Topic
+from masar.domain.models import Journey, Note, Section, Topic
 
 
 class TestJourneyDomain(unittest.TestCase):
@@ -116,6 +116,39 @@ class TestTopicDomain(unittest.TestCase):
 
         topic.set_status(False)
         self.assertFalse(topic.is_completed)
+
+
+class TestNoteDomain(unittest.TestCase):
+    """Test cases for the Note domain entity."""
+
+    def test_create_valid_note(self) -> None:
+        note = Note(topic_id=1, content="Important concept to remember")
+        self.assertEqual(note.topic_id, 1)
+        self.assertEqual(note.content, "Important concept to remember")
+        self.assertIsNone(note.id)
+        self.assertIsNotNone(note.created_at)
+        self.assertIsNone(note.updated_at)
+
+    def test_create_note_whitespace_trimmed(self) -> None:
+        note = Note(topic_id=1, content="   Some spaced note   ")
+        self.assertEqual(note.content, "Some spaced note")
+
+    def test_create_note_empty_content_raises_validation_error(self) -> None:
+        with self.assertRaises(ValidationError):
+            Note(topic_id=1, content="")
+        with self.assertRaises(ValidationError):
+            Note(topic_id=1, content="    ")
+
+    def test_update_note_content(self) -> None:
+        note = Note(topic_id=1, content="Original note")
+        note.update("Updated note content")
+        self.assertEqual(note.content, "Updated note content")
+        self.assertIsNotNone(note.updated_at)
+
+    def test_update_note_empty_content_raises_validation_error(self) -> None:
+        note = Note(topic_id=1, content="Original note")
+        with self.assertRaises(ValidationError):
+            note.update("   ")
 
 
 if __name__ == "__main__":

@@ -73,7 +73,7 @@ class TestArchitectureAndDependencyDirection(unittest.TestCase):
         from masar.container import build_cli, build_container
 
         services = build_container()
-        self.assertEqual(len(services), 3)
+        self.assertEqual(len(services), 4)
         cli = build_cli()
         self.assertIsNotNone(cli)
 
@@ -82,26 +82,33 @@ class TestArchitectureAndDependencyDirection(unittest.TestCase):
         from masar.domain.models.journey import Journey
         from masar.domain.models.section import Section
         from masar.domain.models.topic import Topic
+        from masar.domain.models.note import Note
         from masar.domain.exceptions.base import DomainError, ValidationError, EntityNotFoundError
         from masar.domain.exceptions.journey import JourneyNotFoundError
         from masar.domain.exceptions.section import SectionNotFoundError
         from masar.domain.exceptions.topic import TopicNotFoundError
+        from masar.domain.exceptions.note import NoteNotFoundError
         from masar.application.interfaces.repositories.journey_repository import JourneyRepository
         from masar.application.interfaces.repositories.section_repository import SectionRepository
         from masar.application.interfaces.repositories.topic_repository import TopicRepository
+        from masar.application.interfaces.repositories.note_repository import NoteRepository
         from masar.application.services.journey_service import JourneyService
         from masar.application.services.section_service import SectionService
         from masar.application.services.topic_service import TopicService
+        from masar.application.services.note_service import NoteService
         from masar.infrastructure.repositories.in_memory.journey_repository import InMemoryJourneyRepository
         from masar.infrastructure.repositories.in_memory.section_repository import InMemorySectionRepository
         from masar.infrastructure.repositories.in_memory.topic_repository import InMemoryTopicRepository
+        from masar.infrastructure.repositories.in_memory.note_repository import InMemoryNoteRepository
 
         self.assertTrue(issubclass(InMemoryJourneyRepository, JourneyRepository))
         self.assertTrue(issubclass(InMemorySectionRepository, SectionRepository))
         self.assertTrue(issubclass(InMemoryTopicRepository, TopicRepository))
+        self.assertTrue(issubclass(InMemoryNoteRepository, NoteRepository))
         self.assertTrue(issubclass(JourneyNotFoundError, EntityNotFoundError))
         self.assertTrue(issubclass(SectionNotFoundError, EntityNotFoundError))
         self.assertTrue(issubclass(TopicNotFoundError, EntityNotFoundError))
+        self.assertTrue(issubclass(NoteNotFoundError, EntityNotFoundError))
 
 
 

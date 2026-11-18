@@ -2,14 +2,22 @@
 
 from masar.application.interfaces.repositories import (
     JourneyRepository,
+    NoteRepository,
     SectionRepository,
     TopicRepository,
 )
-from masar.application.services import JourneyService, SectionService, TopicService
+from masar.application.services import (
+    JourneyService,
+    NoteService,
+    SectionService,
+    TopicService,
+)
 
 __all__ = [
     "JourneyRepository",
     "JourneyService",
+    "NoteRepository",
+    "NoteService",
     "SectionRepository",
     "SectionService",
     "TopicRepository",

@@ -66,12 +66,14 @@ masar/
 │   ├── models/                         # Domain models in individual files
 │   │   ├── __init__.py
 │   │   ├── journey.py
+│   │   ├── note.py
 │   │   ├── section.py
 │   │   └── topic.py
 │   └── exceptions/                     # Domain exceptions
 │       ├── __init__.py
 │       ├── base.py
 │       ├── journey.py
+│       ├── note.py
 │       ├── section.py
 │       └── topic.py
 ├── application/                        # Use cases & workflow coordination
@@ -81,11 +83,13 @@ masar/
 │   │   └── repositories/
 │   │       ├── __init__.py
 │   │       ├── journey_repository.py
+│   │       ├── note_repository.py
 │   │       ├── section_repository.py
 │   │       └── topic_repository.py
 │   └── services/                       # Application services
 │       ├── __init__.py
 │       ├── journey_service.py
+│       ├── note_service.py
 │       ├── section_service.py
 │       └── topic_service.py
 ├── infrastructure/                     # Persistence & external adapters
@@ -95,6 +99,7 @@ masar/
 │       └── in_memory/                  # Concrete in-memory implementations
 │           ├── __init__.py
 │           ├── journey_repository.py
+│           ├── note_repository.py
 │           ├── section_repository.py
 │           └── topic_repository.py
 └── presentation/                       # Presentation & CLI interaction

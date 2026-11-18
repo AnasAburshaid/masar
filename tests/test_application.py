@@ -2,16 +2,23 @@
 
 import unittest
 
-from masar.application.services import JourneyService, SectionService, TopicService
+from masar.application.services import (
+    JourneyService,
+    NoteService,
+    SectionService,
+    TopicService,
+)
 from masar.domain.exceptions import (
     JourneyNotFoundError,
+    NoteNotFoundError,
     SectionNotFoundError,
     TopicNotFoundError,
     ValidationError,
 )
-from masar.domain.models import Section, Topic
+from masar.domain.models import Note, Section, Topic
 from masar.infrastructure.repositories import (
     InMemoryJourneyRepository,
+    InMemoryNoteRepository,
     InMemorySectionRepository,
     InMemoryTopicRepository,
 )
@@ -24,10 +31,12 @@ class TestJourneyService(unittest.TestCase):
         self.journey_repo = InMemoryJourneyRepository()
         self.section_repo = InMemorySectionRepository()
         self.topic_repo = InMemoryTopicRepository()
+        self.note_repo = InMemoryNoteRepository()
         self.service = JourneyService(
             repository=self.journey_repo,
             section_repository=self.section_repo,
             topic_repository=self.topic_repo,
+            note_repository=self.note_repo,
         )
 
     def test_create_journey_success(self) -> None:
@@ -75,15 +84,20 @@ class TestJourneyService(unittest.TestCase):
 
     def test_delete_journey_cascades_to_sections_and_topics(self) -> None:
         journey = self.service.create_journey(title="Full Stack")
-        section_service = SectionService(self.section_repo, self.journey_repo, self.topic_repo)
+        section_service = SectionService(
+            self.section_repo, self.journey_repo, self.topic_repo, self.note_repo
+        )
         sec = section_service.create_section(journey.id, "Frontend")
-        topic_service = TopicService(self.topic_repo, self.section_repo)
+        topic_service = TopicService(self.topic_repo, self.section_repo, self.note_repo)
         top = topic_service.create_topic(sec.id, "React")
+        note_service = NoteService(self.note_repo, self.topic_repo)
+        note = note_service.create_note(top.id, "Learn hooks")
 
         self.service.delete_journey(journey.id)
 
         self.assertEqual(len(self.section_repo.get_by_journey_id(journey.id)), 0)
         self.assertEqual(len(self.topic_repo.get_by_section_id(sec.id)), 0)
+        self.assertEqual(len(self.note_repo.get_by_topic_id(top.id)), 0)
 
 
 class TestSectionService(unittest.TestCase):
@@ -93,11 +107,13 @@ class TestSectionService(unittest.TestCase):
         self.journey_repo = InMemoryJourneyRepository()
         self.section_repo = InMemorySectionRepository()
         self.topic_repo = InMemoryTopicRepository()
+        self.note_repo = InMemoryNoteRepository()
         self.journey_service = JourneyService(self.journey_repo)
         self.section_service = SectionService(
             section_repository=self.section_repo,
             journey_repository=self.journey_repo,
             topic_repository=self.topic_repo,
+            note_repository=self.note_repo,
         )
         self.journey = self.journey_service.create_journey("Python Basics")
 
@@ -147,9 +163,11 @@ class TestSectionService(unittest.TestCase):
 
     def test_delete_section_and_cascades_topics(self) -> None:
         sec = self.section_service.create_section(self.journey.id, "Data Structures")
-        topic_service = TopicService(self.topic_repo, self.section_repo)
-        topic_service.create_topic(sec.id, "Lists")
-        topic_service.create_topic(sec.id, "Dictionaries")
+        topic_service = TopicService(self.topic_repo, self.section_repo, self.note_repo)
+        t1 = topic_service.create_topic(sec.id, "Lists")
+        t2 = topic_service.create_topic(sec.id, "Dictionaries")
+        note_service = NoteService(self.note_repo, self.topic_repo)
+        note_service.create_note(t1.id, "Arrays and dynamic arrays")
 
         self.section_service.delete_section(sec.id)
 
@@ -157,6 +175,7 @@ class TestSectionService(unittest.TestCase):
             self.section_service.get_section(sec.id)
 
         self.assertEqual(len(self.topic_repo.get_by_section_id(sec.id)), 0)
+        self.assertEqual(len(self.note_repo.get_by_topic_id(t1.id)), 0)
 
         with self.assertRaises(SectionNotFoundError):
             self.section_service.delete_section(999)
@@ -168,8 +187,9 @@ class TestTopicService(unittest.TestCase):
     def setUp(self) -> None:
         self.section_repo = InMemorySectionRepository()
         self.topic_repo = InMemoryTopicRepository()
+        self.note_repo = InMemoryNoteRepository()
         self.section = self.section_repo.add(Section(journey_id=1, title="Core"))
-        self.service = TopicService(self.topic_repo, self.section_repo)
+        self.service = TopicService(self.topic_repo, self.section_repo, self.note_repo)
 
     def test_create_topic_valid(self) -> None:
         t = self.service.create_topic(self.section.id, "Variables")
@@ -231,13 +251,82 @@ class TestTopicService(unittest.TestCase):
 
     def test_delete_topic_success_and_not_found(self) -> None:
         t = self.service.create_topic(self.section.id, "To Delete")
+        note_service = NoteService(self.note_repo, self.topic_repo)
+        note_service.create_note(t.id, "Note to be deleted with topic")
         self.service.delete_topic(t.id)
 
         with self.assertRaises(TopicNotFoundError):
             self.service.get_topic(t.id)
 
+        self.assertEqual(len(self.note_repo.get_by_topic_id(t.id)), 0)
+
         with self.assertRaises(TopicNotFoundError):
             self.service.delete_topic(999)
+
+
+class TestNoteService(unittest.TestCase):
+    """Test suite for NoteService."""
+
+    def setUp(self) -> None:
+        self.topic_repo = InMemoryTopicRepository()
+        self.note_repo = InMemoryNoteRepository()
+        self.topic = self.topic_repo.add(Topic(section_id=1, title="Variables"))
+        self.service = NoteService(self.note_repo, self.topic_repo)
+
+    def test_create_note_success(self) -> None:
+        note = self.service.create_note(self.topic.id, "Remember variable scope")
+        self.assertEqual(note.id, 1)
+        self.assertEqual(note.topic_id, self.topic.id)
+        self.assertEqual(note.content, "Remember variable scope")
+
+    def test_create_note_nonexistent_topic_fails(self) -> None:
+        with self.assertRaises(TopicNotFoundError):
+            self.service.create_note(999, "Orphan Note")
+
+    def test_create_note_empty_content_fails(self) -> None:
+        with self.assertRaises(ValidationError):
+            self.service.create_note(self.topic.id, "   ")
+
+    def test_list_notes(self) -> None:
+        self.service.create_note(self.topic.id, "N1")
+        self.service.create_note(self.topic.id, "N2")
+        notes = self.service.list_notes(self.topic.id)
+        self.assertEqual(len(notes), 2)
+        self.assertEqual([n.content for n in notes], ["N1", "N2"])
+
+    def test_list_notes_nonexistent_topic(self) -> None:
+        with self.assertRaises(TopicNotFoundError):
+            self.service.list_notes(999)
+
+    def test_get_note_success_and_not_found(self) -> None:
+        n = self.service.create_note(self.topic.id, "Content")
+        found = self.service.get_note(n.id)
+        self.assertEqual(found.content, "Content")
+
+        with self.assertRaises(NoteNotFoundError):
+            self.service.get_note(999)
+
+    def test_update_note_success(self) -> None:
+        n = self.service.create_note(self.topic.id, "Original")
+        updated = self.service.update_note(n.id, "Updated Note")
+        self.assertEqual(updated.content, "Updated Note")
+
+        with self.assertRaises(ValidationError):
+            self.service.update_note(n.id, "   ")
+
+    def test_update_note_not_found(self) -> None:
+        with self.assertRaises(NoteNotFoundError):
+            self.service.update_note(999, "New content")
+
+    def test_delete_note_success_and_not_found(self) -> None:
+        n = self.service.create_note(self.topic.id, "To Remove")
+        self.service.delete_note(n.id)
+
+        with self.assertRaises(NoteNotFoundError):
+            self.service.get_note(n.id)
+
+        with self.assertRaises(NoteNotFoundError):
+            self.service.delete_note(999)
 
 
 if __name__ == "__main__":

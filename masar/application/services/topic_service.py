@@ -1,5 +1,6 @@
 """Topic application service."""
 
+from masar.application.interfaces.repositories.note_repository import NoteRepository
 from masar.application.interfaces.repositories.section_repository import (
     SectionRepository,
 )
@@ -15,9 +16,11 @@ class TopicService:
         self,
         topic_repository: TopicRepository,
         section_repository: SectionRepository | None = None,
+        note_repository: NoteRepository | None = None,
     ) -> None:
         self._topic_repository = topic_repository
         self._section_repository = section_repository
+        self._note_repository = note_repository
 
     def create_topic(self, section_id: int, title: str) -> Topic:
         """Add a new topic to a section."""
@@ -58,7 +61,12 @@ class TopicService:
         return self._topic_repository.update(topic)
 
     def delete_topic(self, topic_id: int) -> None:
-        """Delete a topic by ID."""
+        """Delete a topic by ID and cascade delete attached notes."""
+        self.get_topic(topic_id)
+
+        if self._note_repository:
+            self._note_repository.delete_by_topic_id(topic_id)
+
         deleted = self._topic_repository.delete(topic_id)
         if not deleted:
             raise TopicNotFoundError(f"Topic with ID {topic_id} was not found.")
