@@ -11,7 +11,6 @@ from masar.application.services import (
     TopicService,
 )
 from masar.config.settings import Settings, get_settings
-from masar.container import build_container
 
 ServicesTuple = tuple[
     JourneyService, SectionService, TopicService, NoteService, ProgressService
@@ -25,11 +24,16 @@ def get_app_settings(request: Request) -> Settings:
     return get_settings()
 
 
-def get_services(
-    settings: Annotated[Settings, Depends(get_app_settings)],
-) -> ServicesTuple:
-    """Instantiate and wire application services using the active settings."""
-    return build_container(settings=settings)
+def get_services(request: Request) -> ServicesTuple:
+    """Retrieve or initialize shared application services from application state."""
+    if hasattr(request.app.state, "services") and request.app.state.services is not None:
+        return request.app.state.services  # type: ignore[no-any-return]
+    from masar.container import build_container
+
+    settings = get_app_settings(request)
+    services = build_container(settings=settings)
+    request.app.state.services = services
+    return services
 
 
 def get_journey_service(
