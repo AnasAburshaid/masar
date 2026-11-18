@@ -42,6 +42,15 @@ class TestJourneyDomain(unittest.TestCase):
         with self.assertRaises(ValidationError):
             journey.update(title="   ")
 
+    def test_journey_string_representation_and_persistence_status(self) -> None:
+        journey = Journey(title="Python", id=1)
+        self.assertTrue(journey.is_persisted)
+        self.assertEqual(str(journey), "[1] Python")
+
+        unpersisted = Journey(title="Python")
+        self.assertFalse(unpersisted.is_persisted)
+        self.assertEqual(str(unpersisted), "[New] Python")
+
 
 class TestSectionDomain(unittest.TestCase):
     """Test cases for the Section domain entity."""
@@ -70,6 +79,15 @@ class TestSectionDomain(unittest.TestCase):
 
         with self.assertRaises(ValidationError):
             section.rename("  ")
+
+    def test_section_string_representation_and_persistence_status(self) -> None:
+        section = Section(journey_id=1, title="Basics", id=2)
+        self.assertTrue(section.is_persisted)
+        self.assertEqual(str(section), "[Section 2] Basics")
+
+        unpersisted = Section(journey_id=1, title="Advanced")
+        self.assertFalse(unpersisted.is_persisted)
+        self.assertEqual(str(unpersisted), "[Section New] Advanced")
 
 
 class TestTopicDomain(unittest.TestCase):
@@ -117,6 +135,20 @@ class TestTopicDomain(unittest.TestCase):
         topic.set_status(False)
         self.assertFalse(topic.is_completed)
 
+    def test_topic_toggle_status_and_string_representation(self) -> None:
+        topic = Topic(section_id=1, title="Control Flow", id=3)
+        self.assertTrue(topic.is_persisted)
+        self.assertEqual(str(topic), "[Topic 3] [ ] Control Flow")
+
+        new_status = topic.toggle_status()
+        self.assertTrue(new_status)
+        self.assertTrue(topic.is_completed)
+        self.assertEqual(str(topic), "[Topic 3] [✓] Control Flow")
+
+        new_status = topic.toggle_status()
+        self.assertFalse(new_status)
+        self.assertFalse(topic.is_completed)
+
 
 class TestNoteDomain(unittest.TestCase):
     """Test cases for the Note domain entity."""
@@ -150,9 +182,30 @@ class TestNoteDomain(unittest.TestCase):
         with self.assertRaises(ValidationError):
             note.update("   ")
 
+    def test_note_edited_status_and_string_representation(self) -> None:
+        note = Note(topic_id=1, content="Original note", id=5)
+        self.assertTrue(note.is_persisted)
+        self.assertFalse(note.is_edited)
+        self.assertEqual(str(note), "[Note 5] Original note")
+
+        note.update("Updated content")
+        self.assertTrue(note.is_edited)
+        self.assertEqual(str(note), "[Note 5] Updated content")
+
 
 class TestProgressDomain(unittest.TestCase):
     """Test cases for the Progress domain value object."""
+
+    def test_progress_is_complete_and_str(self) -> None:
+        p_done = Progress(completed_topics=5, total_topics=5)
+        self.assertTrue(p_done.is_complete)
+        self.assertEqual(str(p_done), p_done.formatted)
+
+        p_ongoing = Progress(completed_topics=2, total_topics=5)
+        self.assertFalse(p_ongoing.is_complete)
+
+        p_empty = Progress(completed_topics=0, total_topics=0)
+        self.assertFalse(p_empty.is_complete)
 
     def test_create_valid_progress(self) -> None:
         progress = Progress(completed_topics=2, total_topics=5)

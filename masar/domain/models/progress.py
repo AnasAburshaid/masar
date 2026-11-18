@@ -38,3 +38,12 @@ class Progress:
         filled = min(width, max(0, filled))
         bar = "=" * filled + " " * (width - filled)
         return f"[{bar}]"
+
+    @property
+    def is_complete(self) -> bool:
+        """Return True if all topics are completed and total topics > 0."""
+        return self.total_topics > 0 and self.completed_topics == self.total_topics
+
+    def __str__(self) -> str:
+        """Return user-friendly formatted progress."""
+        return self.formatted

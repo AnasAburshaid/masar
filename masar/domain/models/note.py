@@ -30,3 +30,18 @@ class Note:
         self.content = content
         self.validate()
         self.updated_at = datetime.now(timezone.utc)
+
+    @property
+    def is_persisted(self) -> bool:
+        """Return True if note has been persisted with an assigned ID."""
+        return self.id is not None
+
+    @property
+    def is_edited(self) -> bool:
+        """Return True if note has been updated since creation."""
+        return self.updated_at is not None
+
+    def __str__(self) -> str:
+        """Return user-friendly string representation."""
+        prefix = f"Note {self.id}" if self.is_persisted else "Note New"
+        return f"[{prefix}] {self.content}"

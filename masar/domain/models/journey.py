@@ -30,3 +30,13 @@ class Journey:
         self.title = title
         self.description = description
         self.validate()
+
+    @property
+    def is_persisted(self) -> bool:
+        """Return True if entity has been persisted with an assigned ID."""
+        return self.id is not None
+
+    def __str__(self) -> str:
+        """Return user-friendly string representation."""
+        prefix = f"[{self.id}]" if self.is_persisted else "[New]"
+        return f"{prefix} {self.title}"
