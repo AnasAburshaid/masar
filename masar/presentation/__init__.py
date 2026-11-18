@@ -1,6 +1,5 @@
-"""Presentation layer handling CLI and API user interfaces."""
+"""Presentation layer handling CLI interactions and user interface."""
 
-from masar.presentation.api import app, create_app
 from masar.presentation.cli import CLI, main
 
-__all__ = ["CLI", "main", "app", "create_app"]
+__all__ = ["CLI", "main"]

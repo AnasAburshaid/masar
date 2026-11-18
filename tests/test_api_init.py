@@ -6,13 +6,13 @@ from fastapi.testclient import TestClient
 
 from masar.application.services import JourneyService
 from masar.config.settings import Settings
+from masar.container import build_container
 from masar.presentation.api.app import create_app
 from masar.presentation.api.dependencies import (
     get_journey_service,
     get_note_service,
     get_progress_service,
     get_section_service,
-    get_services,
     get_topic_service,
 )
 
@@ -58,7 +58,7 @@ class TestFastAPIInitialization(unittest.TestCase):
         self.assertEqual(docs_response.status_code, 200)
 
     def test_dependencies_resolve_services(self) -> None:
-        services = get_services(settings=self.settings)
+        services = build_container(settings=self.settings)
         self.assertEqual(len(services), 5)
         journey_svc = get_journey_service(services=services)
         self.assertIsInstance(journey_svc, JourneyService)

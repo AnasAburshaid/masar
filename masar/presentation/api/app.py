@@ -9,6 +9,7 @@ from masar.domain.exceptions import (
     StorageError,
     ValidationError,
 )
+from masar.presentation.api.routes.journeys import router as journeys_router
 from masar.presentation.api.routes.root import router as root_router
 
 
@@ -47,11 +48,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             content={"detail": f"Storage Error: {exc}"},
         )
 
-    # Attach settings
+    # Attach settings and application services to app state
+    from masar.container import build_container
+
     app.state.settings = active_settings
+    app.state.services = build_container(settings=active_settings)
 
     # Include routers
     app.include_router(root_router)
+    app.include_router(journeys_router)
 
     return app
 
