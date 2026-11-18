@@ -6,7 +6,11 @@ from pathlib import Path
 import tempfile
 from typing import Any
 
-from masar.infrastructure.exceptions import StorageError
+from masar.domain.exceptions import (
+    CorruptedStorageError,
+    StorageAccessError,
+    StorageError,
+)
 
 DEFAULT_SCHEMA: dict[str, list[dict[str, Any]]] = {
     "journeys": [],
@@ -29,14 +33,20 @@ class JsonStorage:
 
         try:
             content = self.file_path.read_text(encoding="utf-8")
+        except OSError as err:
+            raise StorageAccessError(
+                f"Cannot read storage file at '{self.file_path}': {err}"
+            ) from err
+
+        try:
             data = json.loads(content)
-        except (json.JSONDecodeError, OSError) as err:
-            raise StorageError(
+        except json.JSONDecodeError as err:
+            raise CorruptedStorageError(
                 f"Corrupted or invalid JSON data in '{self.file_path}': {err}"
             ) from err
 
         if not isinstance(data, dict):
-            raise StorageError(
+            raise CorruptedStorageError(
                 f"Corrupted or invalid JSON data in '{self.file_path}': root element must be an object."
             )
 
@@ -49,7 +59,12 @@ class JsonStorage:
 
     def save(self, data: dict[str, list[dict[str, Any]]]) -> None:
         """Atomically persist data to the JSON file."""
-        self.file_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            self.file_path.parent.mkdir(parents=True, exist_ok=True)
+        except OSError as err:
+            raise StorageAccessError(
+                f"Cannot create directory '{self.file_path.parent}': {err}"
+            ) from err
 
         # Write to temporary file in the same directory, then atomic replace
         temp_file = None
@@ -66,6 +81,10 @@ class JsonStorage:
 
             # Atomic replace target file
             os.replace(temp_file, self.file_path)
+        except OSError as err:
+            if temp_file and temp_file.exists():
+                temp_file.unlink(missing_ok=True)
+            raise StorageAccessError(f"Failed to save data to '{self.file_path}': {err}") from err
         except Exception as err:
             if temp_file and temp_file.exists():
                 temp_file.unlink(missing_ok=True)
