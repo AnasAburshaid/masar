@@ -9,6 +9,7 @@ from masar.application.interfaces.repositories import (
 from masar.application.services import (
     JourneyService,
     NoteService,
+    ProgressService,
     SectionService,
     TopicService,
 )
@@ -18,6 +19,7 @@ __all__ = [
     "JourneyService",
     "NoteRepository",
     "NoteService",
+    "ProgressService",
     "SectionRepository",
     "SectionService",
     "TopicRepository",

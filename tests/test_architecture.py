@@ -73,7 +73,7 @@ class TestArchitectureAndDependencyDirection(unittest.TestCase):
         from masar.container import build_cli, build_container
 
         services = build_container()
-        self.assertEqual(len(services), 4)
+        self.assertEqual(len(services), 5)
         cli = build_cli()
         self.assertIsNotNone(cli)
 
@@ -83,6 +83,7 @@ class TestArchitectureAndDependencyDirection(unittest.TestCase):
         from masar.domain.models.section import Section
         from masar.domain.models.topic import Topic
         from masar.domain.models.note import Note
+        from masar.domain.models.progress import Progress
         from masar.domain.exceptions.base import DomainError, ValidationError, EntityNotFoundError
         from masar.domain.exceptions.journey import JourneyNotFoundError
         from masar.domain.exceptions.section import SectionNotFoundError
@@ -96,6 +97,7 @@ class TestArchitectureAndDependencyDirection(unittest.TestCase):
         from masar.application.services.section_service import SectionService
         from masar.application.services.topic_service import TopicService
         from masar.application.services.note_service import NoteService
+        from masar.application.services.progress_service import ProgressService
         from masar.infrastructure.repositories.in_memory.journey_repository import InMemoryJourneyRepository
         from masar.infrastructure.repositories.in_memory.section_repository import InMemorySectionRepository
         from masar.infrastructure.repositories.in_memory.topic_repository import InMemoryTopicRepository

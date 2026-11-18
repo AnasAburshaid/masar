@@ -9,7 +9,7 @@ from masar.domain.exceptions import (
     TopicNotFoundError,
     ValidationError,
 )
-from masar.domain.models import Journey, Note, Section, Topic
+from masar.domain.models import Journey, Note, Progress, Section, Topic
 
 __all__ = [
     "DomainError",
@@ -18,6 +18,7 @@ __all__ = [
     "JourneyNotFoundError",
     "Note",
     "NoteNotFoundError",
+    "Progress",
     "Section",
     "SectionNotFoundError",
     "Topic",

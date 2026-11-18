@@ -6,6 +6,7 @@ from typing import Callable
 from masar.application.services import (
     JourneyService,
     NoteService,
+    ProgressService,
     SectionService,
     TopicService,
 )
@@ -27,6 +28,7 @@ class CLI:
         section_service: SectionService | None = None,
         topic_service: TopicService | None = None,
         note_service: NoteService | None = None,
+        progress_service: ProgressService | None = None,
         input_func: Callable[[str], str] = input,
         output_func: Callable[..., None] = print,
     ) -> None:
@@ -38,16 +40,34 @@ class CLI:
         ):
             from masar.container import build_container
 
-            default_j, default_s, default_t, default_n = build_container()
+            default_j, default_s, default_t, default_n, default_p = build_container()
             self.journey_service = journey_service or default_j
             self.section_service = section_service or default_s
             self.topic_service = topic_service or default_t
             self.note_service = note_service or default_n
+            self.progress_service = progress_service or default_p
         else:
             self.journey_service = journey_service
             self.section_service = section_service
             self.topic_service = topic_service
             self.note_service = note_service
+            if progress_service is not None:
+                self.progress_service = progress_service
+            elif (
+                hasattr(self.journey_service, "_repository")
+                and hasattr(self.section_service, "_section_repository")
+                and hasattr(self.topic_service, "_topic_repository")
+            ):
+                self.progress_service = ProgressService(
+                    journey_repository=self.journey_service._repository,
+                    section_repository=self.section_service._section_repository,
+                    topic_repository=self.topic_service._topic_repository,
+                )
+            else:
+                from masar.container import build_container
+
+                _, _, _, _, default_p = build_container()
+                self.progress_service = default_p
 
         # Backward compatibility alias
         self.service = self.journey_service
@@ -77,12 +97,13 @@ class CLI:
         self.output("6. Manage sections")
         self.output("7. Manage topics")
         self.output("8. Manage notes")
+        self.output("9. View learning progress")
         self.output("0. Exit")
 
     # --- Journey Handlers ---
 
     def handle_list_journeys(self) -> None:
-        """List all existing journeys."""
+        """List all existing journeys with progress."""
         journeys = self.journey_service.list_journeys()
         if not journeys:
             self.output("No learning journeys found. Start by creating one!")
@@ -90,10 +111,14 @@ class CLI:
 
         self.output("\n--- All Learning Journeys ---")
         for journey in journeys:
-            self.output(f"[{journey.id}] {journey.title}")
+            if journey.id is not None:
+                progress = self.progress_service.calculate_journey_progress(journey.id)
+                self.output(f"[{journey.id}] {journey.title} - Progress: {progress.formatted}")
+            else:
+                self.output(f"[{journey.id}] {journey.title}")
 
     def handle_view_journey(self) -> None:
-        """Display details of a specific journey including sections, topics, and notes."""
+        """Display details of a specific journey including sections, topics, notes, and progress."""
         journey_id = self._parse_id(self.input("Enter journey ID: "))
         if journey_id is None:
             return
@@ -107,13 +132,17 @@ class CLI:
             self.output(f"Description: {description}")
             self.output(f"Created At: {journey.created_at.strftime('%Y-%m-%d %H:%M:%S UTC')}")
 
+            journey_prog = self.progress_service.calculate_journey_progress(journey.id)  # type: ignore[arg-type]
+            self.output(f"Progress: {journey_prog.progress_bar()} {journey_prog.formatted}")
+
             sections = self.section_service.list_sections(journey.id)  # type: ignore[arg-type]
             if not sections:
                 self.output("\nSections: (No sections created yet)")
             else:
                 self.output("\nSections & Topics:")
                 for section in sections:
-                    self.output(f"  [Section {section.id}] {section.title}")
+                    sec_prog = self.progress_service.calculate_section_progress(section.id)  # type: ignore[arg-type]
+                    self.output(f"  [Section {section.id}] {section.title} - Progress: {sec_prog.formatted}")
                     topics = self.topic_service.list_topics(section.id)  # type: ignore[arg-type]
                     if not topics:
                         self.output("    (No topics yet)")
@@ -210,7 +239,11 @@ class CLI:
 
             self.output(f"\n--- Sections in Journey [{journey_id}] ---")
             for section in sections:
-                self.output(f"[Section {section.id}] {section.title}")
+                if section.id is not None:
+                    sec_prog = self.progress_service.calculate_section_progress(section.id)
+                    self.output(f"[Section {section.id}] {section.title} - Progress: {sec_prog.formatted}")
+                else:
+                    self.output(f"[Section {section.id}] {section.title}")
         except JourneyNotFoundError as err:
             self.output(f"Error: {err}")
 
@@ -436,6 +469,34 @@ class CLI:
         except NoteNotFoundError as err:
             self.output(f"Error: {err}")
 
+    # --- Progress Handlers ---
+
+    def handle_view_progress(self) -> None:
+        """Display learning progress overview and section breakdown for a journey."""
+        journey_id = self._parse_id(self.input("Enter journey ID: "))
+        if journey_id is None:
+            return
+
+        try:
+            journey = self.journey_service.get_journey(journey_id)
+            journey_prog = self.progress_service.calculate_journey_progress(journey_id)
+            self.output(f"\n--- Learning Progress for '{journey.title}' [ID: {journey.id}] ---")
+            self.output(f"Overall Progress: {journey_prog.progress_bar()} {journey_prog.formatted}")
+
+            sections = self.section_service.list_sections(journey_id)
+            if not sections:
+                self.output("No sections found in this journey.")
+            else:
+                self.output("\nSection Breakdown:")
+                for section in sections:
+                    if section.id is not None:
+                        sec_prog = self.progress_service.calculate_section_progress(section.id)
+                        self.output(
+                            f"  [Section {section.id}] {section.title}: {sec_prog.progress_bar()} {sec_prog.formatted}"
+                        )
+        except JourneyNotFoundError as err:
+            self.output(f"Error: {err}")
+
     # --- Main Loop ---
 
     def run(self) -> int:
@@ -461,6 +522,8 @@ class CLI:
                     self.handle_topics_menu()
                 elif choice == "8":
                     self.handle_notes_menu()
+                elif choice == "9":
+                    self.handle_view_progress()
                 elif choice == "0":
                     self.output("Goodbye!")
                     break
