@@ -6,6 +6,7 @@ from masar.domain.exceptions import (
     JourneyNotFoundError,
     NoteNotFoundError,
     SectionNotFoundError,
+    StorageError,
     TopicNotFoundError,
     ValidationError,
 )
@@ -21,6 +22,7 @@ __all__ = [
     "Progress",
     "Section",
     "SectionNotFoundError",
+    "StorageError",
     "Topic",
     "TopicNotFoundError",
     "ValidationError",

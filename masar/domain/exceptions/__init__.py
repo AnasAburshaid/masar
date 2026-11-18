@@ -8,6 +8,7 @@ from masar.domain.exceptions.base import (
 from masar.domain.exceptions.journey import JourneyNotFoundError
 from masar.domain.exceptions.note import NoteNotFoundError
 from masar.domain.exceptions.section import SectionNotFoundError
+from masar.domain.exceptions.storage import StorageError
 from masar.domain.exceptions.topic import TopicNotFoundError
 
 __all__ = [
@@ -16,6 +17,7 @@ __all__ = [
     "JourneyNotFoundError",
     "NoteNotFoundError",
     "SectionNotFoundError",
+    "StorageError",
     "TopicNotFoundError",
     "ValidationError",
 ]

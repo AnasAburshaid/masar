@@ -378,6 +378,82 @@ class TestCLI(unittest.TestCase):
         self.assertIn(f"[Section {sec1.id}] Frontend", combined_output)
         self.assertIn(f"[Section {sec2.id}] Backend", combined_output)
 
+    def test_cli_json_persistence_across_sessions(self) -> None:
+        """Verify data created in one CLI session survives restart into a second session."""
+        import tempfile
+        from pathlib import Path
+        from masar.container import build_cli
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            data_file = Path(temp_dir) / "session_test.json"
+
+            # --- Session 1: Create Data ---
+            session1_inputs = [
+                "3", "Data Science", "Analytics Track", # Create journey 1
+                "6", "2", "1", "Pandas", "0",          # Create section 1 in journey 1
+                "7", "2", "1", "DataFrames", "0",      # Create topic 1 in section 1
+                "7", "4", "1", "0",                    # Mark topic 1 completed
+                "8", "2", "1", "Essential for data", "0", # Create note 1
+                "0",                                   # Exit
+            ]
+            s1_out: list[str] = []
+            cli1 = build_cli(storage_type="json", data_file=data_file)
+            cli1.input = lambda prompt="": session1_inputs.pop(0)
+            cli1.output = lambda *args: s1_out.append(" ".join(str(a) for a in args))
+            self.assertEqual(cli1.run(), 0)
+
+            # File should exist on disk
+            self.assertTrue(data_file.exists())
+
+            # --- Session 2: Read Surviving Data ---
+            session2_inputs = [
+                "1",     # View all journeys (should list Data Science with 100.0% progress)
+                "2", "1", # View details of journey 1
+                "0",     # Exit
+            ]
+            s2_out: list[str] = []
+            cli2 = build_cli(storage_type="json", data_file=data_file)
+            cli2.input = lambda prompt="": session2_inputs.pop(0)
+            cli2.output = lambda *args: s2_out.append(" ".join(str(a) for a in args))
+            self.assertEqual(cli2.run(), 0)
+
+            s2_combined = "\n".join(s2_out)
+            self.assertIn("[1] Data Science", s2_combined)
+            self.assertIn("100.0% (1/1 topics)", s2_combined)
+            self.assertIn("[Section 1] Pandas", s2_combined)
+            self.assertIn("[✓] Completed - DataFrames", s2_combined)
+            self.assertIn("Essential for data", s2_combined)
+
+    def test_cli_handles_corrupt_json_file_in_main(self) -> None:
+        """Verify main() reports clear error when storage file is corrupted."""
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            corrupt_file = Path(temp_dir) / "corrupt.json"
+            corrupt_file.write_text("{malformed json", encoding="utf-8")
+
+            with patch("sys.stderr", new=StringIO()) as fake_stderr:
+                with patch("masar.container.build_cli") as mock_build:
+                    from masar.domain.exceptions import StorageError
+                    mock_build.side_effect = StorageError(f"Corrupted or invalid JSON data in '{corrupt_file}'")
+                    exit_code = main()
+                    self.assertEqual(exit_code, 1)
+                    err_msg = fake_stderr.getvalue()
+                    self.assertIn("Storage Error: Corrupted or invalid JSON", err_msg)
+
+    def test_cli_submenu_eof_handling(self) -> None:
+        """Verify submenus handle unexpected EOF without raising uncaught exception."""
+        from masar.container import build_cli
+
+        inputs = ["6"] # Enter sections menu, then EOF
+        out: list[str] = []
+        cli = build_cli(storage_type="in_memory")
+        cli.input = lambda prompt="": inputs.pop(0) if inputs else (_ for _ in ()).throw(EOFError())
+        cli.output = lambda *args: out.append(" ".join(str(a) for a in args))
+        exit_code = cli.run()
+        self.assertEqual(exit_code, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
