@@ -76,6 +76,7 @@ masar/
 │       ├── journey.py
 │       ├── note.py
 │       ├── section.py
+│       ├── storage.py
 │       └── topic.py
 ├── application/                        # Use cases & workflow coordination
 │   ├── __init__.py
@@ -96,9 +97,19 @@ masar/
 │       └── topic_service.py
 ├── infrastructure/                     # Persistence & external adapters
 │   ├── __init__.py
+│   ├── exceptions.py
+│   ├── storage/                        # Persistence storage engines
+│   │   ├── __init__.py
+│   │   └── json_storage.py
 │   └── repositories/
 │       ├── __init__.py
-│       └── in_memory/                  # Concrete in-memory implementations
+│       ├── in_memory/                  # Concrete in-memory implementations
+│       │   ├── __init__.py
+│       │   ├── journey_repository.py
+│       │   ├── note_repository.py
+│       │   ├── section_repository.py
+│       │   └── topic_repository.py
+│       └── json/                       # Concrete JSON file implementations
 │           ├── __init__.py
 │           ├── journey_repository.py
 │           ├── note_repository.py

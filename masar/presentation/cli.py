@@ -14,6 +14,7 @@ from masar.domain.exceptions import (
     JourneyNotFoundError,
     NoteNotFoundError,
     SectionNotFoundError,
+    StorageError,
     TopicNotFoundError,
     ValidationError,
 )
@@ -204,26 +205,29 @@ class CLI:
     def handle_sections_menu(self) -> None:
         """Submenu for managing sections."""
         while True:
-            self.output("\n--- Manage Sections ---")
-            self.output("1. List sections for a journey")
-            self.output("2. Add section to a journey")
-            self.output("3. Rename a section")
-            self.output("4. Delete a section")
-            self.output("0. Back to main menu")
+            try:
+                self.output("\n--- Manage Sections ---")
+                self.output("1. List sections for a journey")
+                self.output("2. Add section to a journey")
+                self.output("3. Rename a section")
+                self.output("4. Delete a section")
+                self.output("0. Back to main menu")
 
-            choice = self.input("Enter choice: ").strip()
-            if choice == "1":
-                self.handle_list_sections()
-            elif choice == "2":
-                self.handle_create_section()
-            elif choice == "3":
-                self.handle_rename_section()
-            elif choice == "4":
-                self.handle_delete_section()
-            elif choice == "0":
+                choice = self.input("Enter choice: ").strip()
+                if choice == "1":
+                    self.handle_list_sections()
+                elif choice == "2":
+                    self.handle_create_section()
+                elif choice == "3":
+                    self.handle_rename_section()
+                elif choice == "4":
+                    self.handle_delete_section()
+                elif choice == "0":
+                    break
+                else:
+                    self.output("Error: Invalid choice. Please choose a valid option.")
+            except (EOFError, KeyboardInterrupt):
                 break
-            else:
-                self.output("Error: Invalid choice. Please choose a valid option.")
 
     def handle_list_sections(self) -> None:
         """List sections for a given journey."""
@@ -290,32 +294,35 @@ class CLI:
     def handle_topics_menu(self) -> None:
         """Submenu for managing topics."""
         while True:
-            self.output("\n--- Manage Topics ---")
-            self.output("1. List topics in a section")
-            self.output("2. Add topic to a section")
-            self.output("3. Rename a topic")
-            self.output("4. Mark topic as completed")
-            self.output("5. Mark topic as pending")
-            self.output("6. Delete a topic")
-            self.output("0. Back to main menu")
+            try:
+                self.output("\n--- Manage Topics ---")
+                self.output("1. List topics in a section")
+                self.output("2. Add topic to a section")
+                self.output("3. Rename a topic")
+                self.output("4. Mark topic as completed")
+                self.output("5. Mark topic as pending")
+                self.output("6. Delete a topic")
+                self.output("0. Back to main menu")
 
-            choice = self.input("Enter choice: ").strip()
-            if choice == "1":
-                self.handle_list_topics()
-            elif choice == "2":
-                self.handle_create_topic()
-            elif choice == "3":
-                self.handle_rename_topic()
-            elif choice == "4":
-                self.handle_set_topic_completion(True)
-            elif choice == "5":
-                self.handle_set_topic_completion(False)
-            elif choice == "6":
-                self.handle_delete_topic()
-            elif choice == "0":
+                choice = self.input("Enter choice: ").strip()
+                if choice == "1":
+                    self.handle_list_topics()
+                elif choice == "2":
+                    self.handle_create_topic()
+                elif choice == "3":
+                    self.handle_rename_topic()
+                elif choice == "4":
+                    self.handle_set_topic_completion(True)
+                elif choice == "5":
+                    self.handle_set_topic_completion(False)
+                elif choice == "6":
+                    self.handle_delete_topic()
+                elif choice == "0":
+                    break
+                else:
+                    self.output("Error: Invalid choice. Please choose a valid option.")
+            except (EOFError, KeyboardInterrupt):
                 break
-            else:
-                self.output("Error: Invalid choice. Please choose a valid option.")
 
     def handle_list_topics(self) -> None:
         """List topics for a given section."""
@@ -392,26 +399,29 @@ class CLI:
     def handle_notes_menu(self) -> None:
         """Submenu for managing notes attached to topics."""
         while True:
-            self.output("\n--- Manage Notes ---")
-            self.output("1. List notes for a topic")
-            self.output("2. Add note to a topic")
-            self.output("3. Edit a note")
-            self.output("4. Delete a note")
-            self.output("0. Back to main menu")
+            try:
+                self.output("\n--- Manage Notes ---")
+                self.output("1. List notes for a topic")
+                self.output("2. Add note to a topic")
+                self.output("3. Edit a note")
+                self.output("4. Delete a note")
+                self.output("0. Back to main menu")
 
-            choice = self.input("Enter choice: ").strip()
-            if choice == "1":
-                self.handle_list_notes()
-            elif choice == "2":
-                self.handle_create_note()
-            elif choice == "3":
-                self.handle_edit_note()
-            elif choice == "4":
-                self.handle_delete_note()
-            elif choice == "0":
+                choice = self.input("Enter choice: ").strip()
+                if choice == "1":
+                    self.handle_list_notes()
+                elif choice == "2":
+                    self.handle_create_note()
+                elif choice == "3":
+                    self.handle_edit_note()
+                elif choice == "4":
+                    self.handle_delete_note()
+                elif choice == "0":
+                    break
+                else:
+                    self.output("Error: Invalid choice. Please choose a valid option.")
+            except (EOFError, KeyboardInterrupt):
                 break
-            else:
-                self.output("Error: Invalid choice. Please choose a valid option.")
 
     def handle_list_notes(self) -> None:
         """List notes for a given topic."""
@@ -532,6 +542,8 @@ class CLI:
             except (EOFError, KeyboardInterrupt):
                 self.output("\nGoodbye!")
                 break
+            except StorageError as err:
+                self.output(f"Storage Error: {err}")
         return 0
 
 
@@ -539,8 +551,12 @@ def main(args: list[str] | None = None) -> int:
     """Entry point for presentation CLI."""
     from masar.container import build_cli
 
-    cli = build_cli()
-    return cli.run()
+    try:
+        cli = build_cli()
+        return cli.run()
+    except StorageError as err:
+        print(f"Storage Error: {err}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

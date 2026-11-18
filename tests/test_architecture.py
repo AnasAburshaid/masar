@@ -72,9 +72,11 @@ class TestArchitectureAndDependencyDirection(unittest.TestCase):
         """Container acts as composition root, building working CLI without errors."""
         from masar.container import build_cli, build_container
 
-        services = build_container()
-        self.assertEqual(len(services), 5)
-        cli = build_cli()
+        services_json = build_container(storage_type="json")
+        self.assertEqual(len(services_json), 5)
+        services_mem = build_container(storage_type="in_memory")
+        self.assertEqual(len(services_mem), 5)
+        cli = build_cli(storage_type="in_memory")
         self.assertIsNotNone(cli)
 
     def test_direct_modular_imports_work(self) -> None:
@@ -102,11 +104,19 @@ class TestArchitectureAndDependencyDirection(unittest.TestCase):
         from masar.infrastructure.repositories.in_memory.section_repository import InMemorySectionRepository
         from masar.infrastructure.repositories.in_memory.topic_repository import InMemoryTopicRepository
         from masar.infrastructure.repositories.in_memory.note_repository import InMemoryNoteRepository
+        from masar.infrastructure.repositories.json.journey_repository import JsonJourneyRepository
+        from masar.infrastructure.repositories.json.section_repository import JsonSectionRepository
+        from masar.infrastructure.repositories.json.topic_repository import JsonTopicRepository
+        from masar.infrastructure.repositories.json.note_repository import JsonNoteRepository
 
         self.assertTrue(issubclass(InMemoryJourneyRepository, JourneyRepository))
         self.assertTrue(issubclass(InMemorySectionRepository, SectionRepository))
         self.assertTrue(issubclass(InMemoryTopicRepository, TopicRepository))
         self.assertTrue(issubclass(InMemoryNoteRepository, NoteRepository))
+        self.assertTrue(issubclass(JsonJourneyRepository, JourneyRepository))
+        self.assertTrue(issubclass(JsonSectionRepository, SectionRepository))
+        self.assertTrue(issubclass(JsonTopicRepository, TopicRepository))
+        self.assertTrue(issubclass(JsonNoteRepository, NoteRepository))
         self.assertTrue(issubclass(JourneyNotFoundError, EntityNotFoundError))
         self.assertTrue(issubclass(SectionNotFoundError, EntityNotFoundError))
         self.assertTrue(issubclass(TopicNotFoundError, EntityNotFoundError))

@@ -1,5 +1,13 @@
 """Composition root and dependency injection setup for Masar."""
 
+from pathlib import Path
+
+from masar.application.interfaces.repositories import (
+    JourneyRepository,
+    NoteRepository,
+    SectionRepository,
+    TopicRepository,
+)
 from masar.application.services import (
     JourneyService,
     NoteService,
@@ -13,17 +21,41 @@ from masar.infrastructure.repositories.in_memory import (
     InMemorySectionRepository,
     InMemoryTopicRepository,
 )
+from masar.infrastructure.repositories.json import (
+    JsonJourneyRepository,
+    JsonNoteRepository,
+    JsonSectionRepository,
+    JsonTopicRepository,
+)
+from masar.infrastructure.storage.json_storage import JsonStorage
 from masar.presentation.cli import CLI
 
 
-def build_container() -> tuple[
+def build_container(
+    storage_type: str = "json",
+    data_file: str | Path | None = None,
+) -> tuple[
     JourneyService, SectionService, TopicService, NoteService, ProgressService
 ]:
     """Instantiate and wire up concrete repositories and application services."""
-    journey_repo = InMemoryJourneyRepository()
-    section_repo = InMemorySectionRepository()
-    topic_repo = InMemoryTopicRepository()
-    note_repo = InMemoryNoteRepository()
+    journey_repo: JourneyRepository
+    section_repo: SectionRepository
+    topic_repo: TopicRepository
+    note_repo: NoteRepository
+
+    if storage_type == "json":
+        storage = JsonStorage(data_file or "masar_data.json")
+        journey_repo = JsonJourneyRepository(storage)
+        section_repo = JsonSectionRepository(storage)
+        topic_repo = JsonTopicRepository(storage)
+        note_repo = JsonNoteRepository(storage)
+    elif storage_type == "in_memory":
+        journey_repo = InMemoryJourneyRepository()
+        section_repo = InMemorySectionRepository()
+        topic_repo = InMemoryTopicRepository()
+        note_repo = InMemoryNoteRepository()
+    else:
+        raise ValueError(f"Unknown storage type: {storage_type}")
 
     journey_service = JourneyService(
         repository=journey_repo,
@@ -60,7 +92,10 @@ def build_container() -> tuple[
     )
 
 
-def build_cli() -> CLI:
+def build_cli(
+    storage_type: str = "json",
+    data_file: str | Path | None = None,
+) -> CLI:
     """Build and configure the CLI presentation with wired application services."""
     (
         journey_service,
@@ -68,7 +103,7 @@ def build_cli() -> CLI:
         topic_service,
         note_service,
         progress_service,
-    ) = build_container()
+    ) = build_container(storage_type=storage_type, data_file=data_file)
     return CLI(
         journey_service=journey_service,
         section_service=section_service,
