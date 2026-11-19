@@ -32,6 +32,10 @@ from masar.application.schemas.topic import (
     TopicResponseSchema,
     TopicUpdateSchema,
 )
+from masar.application.schemas.user import (
+    UserRegisterSchema,
+    UserResponseSchema,
+)
 
 __all__ = [
     # Journey
@@ -60,4 +64,7 @@ __all__ = [
     "StorageTopicRecord",
     "StorageNoteRecord",
     "validate_storage_data",
+    # User
+    "UserRegisterSchema",
+    "UserResponseSchema",
 ]

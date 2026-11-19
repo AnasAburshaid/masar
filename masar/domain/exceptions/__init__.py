@@ -17,6 +17,10 @@ from masar.domain.exceptions.storage import (
     StorageError,
 )
 from masar.domain.exceptions.topic import TopicNotFoundError
+from masar.domain.exceptions.user import (
+    UserAlreadyExistsError,
+    UserNotFoundError,
+)
 
 __all__ = [
     "CorruptedStorageError",
@@ -31,5 +35,7 @@ __all__ = [
     "StorageAccessError",
     "StorageError",
     "TopicNotFoundError",
+    "UserAlreadyExistsError",
+    "UserNotFoundError",
     "ValidationError",
 ]

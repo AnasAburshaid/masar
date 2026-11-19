@@ -5,6 +5,7 @@ from masar.infrastructure.database.models import (
     NoteModel,
     SectionModel,
     TopicModel,
+    UserModel,
 )
 from masar.infrastructure.database.session import (
     Base,
@@ -22,4 +23,5 @@ __all__ = [
     "SectionModel",
     "TopicModel",
     "NoteModel",
+    "UserModel",
 ]
