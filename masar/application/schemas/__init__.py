@@ -10,6 +10,10 @@ from masar.application.schemas.note import (
     NoteResponseSchema,
     NoteUpdateSchema,
 )
+from masar.application.schemas.progress import (
+    JourneyProgressSchema,
+    SectionProgressSchema,
+)
 from masar.application.schemas.section import (
     SectionCreateSchema,
     SectionResponseSchema,
@@ -46,6 +50,9 @@ __all__ = [
     "NoteCreateSchema",
     "NoteUpdateSchema",
     "NoteResponseSchema",
+    # Progress
+    "JourneyProgressSchema",
+    "SectionProgressSchema",
     # Storage
     "StorageDataSchema",
     "StorageJourneyRecord",
