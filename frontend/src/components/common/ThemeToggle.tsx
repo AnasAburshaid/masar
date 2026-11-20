@@ -11,13 +11,16 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
     <button
       onClick={toggleTheme}
       type="button"
+      suppressHydrationWarning
+      data-testid="theme-toggle"
+      data-theme={resolvedTheme}
       className={`relative inline-flex items-center justify-center p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700/60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${className}`}
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
       title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
     >
       {isDark ? (
         // Sun icon for switching to light
-        <svg className="w-4 h-4 text-amber-400 transition-transform hover:rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg data-testid="sun-icon" className="w-4 h-4 text-amber-400 transition-transform hover:rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -27,7 +30,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
         </svg>
       ) : (
         // Moon icon for switching to dark
-        <svg className="w-4 h-4 text-indigo-600 transition-transform hover:-rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg data-testid="moon-icon" className="w-4 h-4 text-indigo-600 transition-transform hover:-rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -39,3 +42,4 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
     </button>
   );
 }
+
