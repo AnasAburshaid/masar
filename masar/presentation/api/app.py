@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from masar.config.settings import Settings, get_settings
 from masar.domain.exceptions import (
+    AuthenticationError,
     EntityNotFoundError,
     StorageError,
     UserAlreadyExistsError,
@@ -59,6 +60,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(AuthenticationError)
+    async def authentication_error_handler(request: Request, exc: AuthenticationError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={"detail": str(exc)},
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     # Attach settings and application services to app state

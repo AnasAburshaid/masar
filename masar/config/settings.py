@@ -27,6 +27,18 @@ class Settings(BaseSettings):
         default="postgresql://postgres:postgres@localhost:5432/masar",
         description="PostgreSQL or SQLAlchemy database connection URL",
     )
+    jwt_secret_key: str = Field(
+        default="masar-insecure-default-dev-secret-change-in-production",
+        description="Secret key used for signing JWT access tokens",
+    )
+    jwt_algorithm: str = Field(
+        default="HS256",
+        description="Cryptographic algorithm for JWT encoding/decoding",
+    )
+    jwt_expire_minutes: int = Field(
+        default=60,
+        description="Access token expiration time in minutes",
+    )
     environment: Literal["development", "testing", "production"] = Field(
         default="development",
         description="Current runtime environment",

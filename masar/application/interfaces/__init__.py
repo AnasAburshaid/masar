@@ -7,7 +7,7 @@ from masar.application.interfaces.repositories import (
     TopicRepository,
     UserRepository,
 )
-from masar.application.interfaces.security import PasswordHasher
+from masar.application.interfaces.security import PasswordHasher, TokenService
 
 __all__ = [
     "JourneyRepository",
@@ -16,4 +16,5 @@ __all__ = [
     "TopicRepository",
     "UserRepository",
     "PasswordHasher",
+    "TokenService",
 ]

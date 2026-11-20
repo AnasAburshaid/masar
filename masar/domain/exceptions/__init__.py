@@ -18,17 +18,23 @@ from masar.domain.exceptions.storage import (
 )
 from masar.domain.exceptions.topic import TopicNotFoundError
 from masar.domain.exceptions.user import (
+    AuthenticationError,
+    InvalidCredentialsError,
+    InvalidTokenError,
     UserAlreadyExistsError,
     UserNotFoundError,
 )
 
 __all__ = [
+    "AuthenticationError",
     "CorruptedStorageError",
     "DomainError",
     "EmptyFieldError",
     "EntityNotFoundError",
     "FieldLengthError",
+    "InvalidCredentialsError",
     "InvalidIdError",
+    "InvalidTokenError",
     "JourneyNotFoundError",
     "NoteNotFoundError",
     "SectionNotFoundError",

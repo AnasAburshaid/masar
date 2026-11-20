@@ -27,6 +27,10 @@ from masar.application.schemas.storage import (
     StorageTopicRecord,
     validate_storage_data,
 )
+from masar.application.schemas.token import (
+    LoginRequestSchema,
+    TokenResponseSchema,
+)
 from masar.application.schemas.topic import (
     TopicCreateSchema,
     TopicResponseSchema,
@@ -67,4 +71,7 @@ __all__ = [
     # User
     "UserRegisterSchema",
     "UserResponseSchema",
+    # Token
+    "LoginRequestSchema",
+    "TokenResponseSchema",
 ]

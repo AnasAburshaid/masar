@@ -1,7 +1,8 @@
 """FastAPI dependency injection providers for application services and settings."""
 
 from typing import Annotated
-from fastapi import Depends, Request
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from masar.application.services import (
     JourneyService,
@@ -12,10 +13,14 @@ from masar.application.services import (
     UserService,
 )
 from masar.config.settings import Settings, get_settings
+from masar.domain.exceptions import AuthenticationError
+from masar.domain.models import User
 
 ServicesTuple = tuple[
     JourneyService, SectionService, TopicService, NoteService, ProgressService
 ]
+
+http_bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def get_app_settings(request: Request) -> Settings:
@@ -82,3 +87,24 @@ def get_user_service(request: Request) -> UserService:
     service = build_user_service(settings=settings)
     request.app.state.user_service = service
     return service
+
+
+def get_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(http_bearer_scheme)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
+) -> User:
+    """Dependency provider retrieving the currently authenticated User."""
+    if not credentials or not credentials.credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid authentication credentials.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    try:
+        return user_service.get_user_from_token(credentials.credentials)
+    except AuthenticationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc

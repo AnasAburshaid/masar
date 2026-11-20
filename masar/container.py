@@ -175,7 +175,17 @@ def build_user_service(
     else:
         raise ValueError(f"Unknown storage type: {resolved_storage}")
 
+    from masar.infrastructure.security.jwt_token import JwtTokenService
     from masar.infrastructure.security.password import Pbkdf2PasswordHasher
 
     hasher = Pbkdf2PasswordHasher()
-    return UserService(user_repository=user_repo, password_hasher=hasher)
+    token_service = JwtTokenService(
+        secret_key=active_settings.jwt_secret_key,
+        algorithm=active_settings.jwt_algorithm,
+        expire_minutes=active_settings.jwt_expire_minutes,
+    )
+    return UserService(
+        user_repository=user_repo,
+        password_hasher=hasher,
+        token_service=token_service,
+    )
