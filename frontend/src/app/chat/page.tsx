@@ -52,6 +52,12 @@ export default function ChatPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const activeDetailRef = useRef<ConversationDetail | null>(null);
+
+  // Keep ref synchronized with state to prevent race conditions during message streaming
+  useEffect(() => {
+    activeDetailRef.current = activeDetail;
+  }, [activeDetail]);
 
   // Auto-scroll to bottom of message thread
   const scrollToBottom = () => {
@@ -97,8 +103,15 @@ export default function ChatPage() {
     async function fetchDetail() {
       if (!activeId) {
         queueMicrotask(() => {
-          if (isMounted) setActiveDetail(null);
+          if (isMounted) {
+            activeDetailRef.current = null;
+            setActiveDetail(null);
+          }
         });
+        return;
+      }
+      // If we already have the active detail loaded for this activeId, avoid overwriting
+      if (activeDetailRef.current && activeDetailRef.current.id === activeId) {
         return;
       }
       try {
@@ -106,11 +119,12 @@ export default function ChatPage() {
         setErrorBanner(null);
         const detail = await conversationService.getConversation(activeId);
         if (isMounted) {
+          activeDetailRef.current = detail;
           setActiveDetail(detail);
         }
       } catch (err) {
         if (isMounted) {
-          setErrorBanner(getErrorMessage(err, 'Failed to load conversations.'));
+          setErrorBanner(getErrorMessage(err, 'Failed to load conversation history.'));
         }
       } finally {
         if (isMounted) {
@@ -129,12 +143,14 @@ export default function ChatPage() {
     try {
       setErrorBanner(null);
       const newConv = await conversationService.createConversation({ title: 'New Conversation' });
-      setConversations((prev) => [newConv, ...prev]);
-      setActiveId(newConv.id);
-      setActiveDetail({
+      const newDetail: ConversationDetail = {
         ...newConv,
         messages: [],
-      });
+      };
+      activeDetailRef.current = newDetail;
+      setConversations((prev) => [newConv, ...prev.filter((c) => c.id !== newConv.id)]);
+      setActiveId(newConv.id);
+      setActiveDetail(newDetail);
       setSidebarOpen(false);
       setTimeout(() => textareaRef.current?.focus(), 100);
     } catch (err) {
@@ -151,7 +167,13 @@ export default function ChatPage() {
       setConversations((prev) => prev.filter((c) => c.id !== convId));
       if (activeId === convId) {
         const remaining = conversations.filter((c) => c.id !== convId);
-        setActiveId(remaining.length > 0 ? remaining[0].id : null);
+        if (remaining.length > 0) {
+          setActiveId(remaining[0].id);
+        } else {
+          setActiveId(null);
+          activeDetailRef.current = null;
+          setActiveDetail(null);
+        }
       }
     } catch (err) {
       setErrorBanner(getErrorMessage(err, 'Failed to delete conversation.'));
@@ -167,17 +189,21 @@ export default function ChatPage() {
     setInputContent('');
 
     let currentConvId = activeId;
+    let targetConv = activeDetailRef.current;
 
     // Create conversation on the fly if none selected
-    if (!currentConvId) {
+    if (!currentConvId || !targetConv) {
       try {
         const newConv = await conversationService.createConversation({ title: 'New Conversation' });
-        setConversations((prev) => [newConv, ...prev]);
-        setActiveId(newConv.id);
-        setActiveDetail({ ...newConv, messages: [] });
         currentConvId = newConv.id;
+        targetConv = { ...newConv, messages: [] };
+        activeDetailRef.current = targetConv;
+        setConversations((prev) => [newConv, ...prev.filter((c) => c.id !== newConv.id)]);
+        setActiveId(newConv.id);
+        setActiveDetail(targetConv);
       } catch (err) {
         setErrorBanner(getErrorMessage(err, 'Failed to initialize conversation.'));
+        setInputContent(content);
         return;
       }
     }
@@ -191,14 +217,12 @@ export default function ChatPage() {
       created_at: new Date(0).toISOString(),
     };
 
-    setActiveDetail((prev) =>
-      prev
-        ? {
-            ...prev,
-            messages: [...prev.messages, tempUserMsg],
-          }
-        : null
-    );
+    const optimisticDetail: ConversationDetail = {
+      ...targetConv,
+      messages: [...targetConv.messages.filter((m) => m.id !== -1), tempUserMsg],
+    };
+    activeDetailRef.current = optimisticDetail;
+    setActiveDetail(optimisticDetail);
 
     setIsSending(true);
 
@@ -206,13 +230,14 @@ export default function ChatPage() {
       const result = await conversationService.sendMessage(currentConvId, { content });
 
       setActiveDetail((prev) => {
-        if (!prev) return null;
-        // Replace optimistic with real messages
-        const filtered = prev.messages.filter((m) => m.id !== tempUserMsg.id);
-        return {
-          ...prev,
+        const base = prev || targetConv;
+        const filtered = base.messages.filter((m) => m.id !== tempUserMsg.id);
+        const updated: ConversationDetail = {
+          ...base,
           messages: [...filtered, result.user_message, result.assistant_message],
         };
+        activeDetailRef.current = updated;
+        return updated;
       });
 
       // Update title in sidebar list if changed
@@ -220,6 +245,17 @@ export default function ChatPage() {
       setConversations(updatedList);
     } catch (err) {
       setErrorBanner(getErrorMessage(err, 'Failed to send message to AI assistant.'));
+      // Remove optimistic message on error and restore input text
+      setActiveDetail((prev) => {
+        if (!prev) return null;
+        const cleaned: ConversationDetail = {
+          ...prev,
+          messages: prev.messages.filter((m) => m.id !== tempUserMsg.id),
+        };
+        activeDetailRef.current = cleaned;
+        return cleaned;
+      });
+      setInputContent(content);
     } finally {
       setIsSending(false);
       setTimeout(() => textareaRef.current?.focus(), 50);
@@ -379,8 +415,9 @@ export default function ChatPage() {
                     {PROMPT_SUGGESTIONS.map((item, idx) => (
                       <button
                         key={idx}
+                        disabled={isSending}
                         onClick={() => handleSendMessage(item.prompt)}
-                        className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 bg-slate-50/50 dark:bg-slate-950/40 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/10 transition-all text-left group"
+                        className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 bg-slate-50/50 dark:bg-slate-950/40 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-left group"
                       >
                         <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
                           {item.title} →
