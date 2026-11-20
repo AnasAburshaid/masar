@@ -6,6 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from masar.application.services import (
     AIService,
+    ConversationService,
     JourneyService,
     NoteService,
     ProgressService,
@@ -100,6 +101,22 @@ def get_ai_service(request: Request) -> AIService:
     service = build_ai_service(settings=settings)
     request.app.state.ai_service = service
     return service
+
+
+def get_conversation_service(request: Request) -> ConversationService:
+    """Dependency provider for ConversationService."""
+    if (
+        hasattr(request.app.state, "conversation_service")
+        and request.app.state.conversation_service is not None
+    ):
+        return request.app.state.conversation_service  # type: ignore[no-any-return]
+    from masar.container import build_conversation_service
+
+    settings = get_app_settings(request)
+    service = build_conversation_service(settings=settings)
+    request.app.state.conversation_service = service
+    return service
+
 
 
 

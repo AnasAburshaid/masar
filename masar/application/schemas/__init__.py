@@ -7,6 +7,15 @@ from masar.application.schemas.ai import (
     ChatRequestSchema,
     CompletionRequestSchema,
 )
+from masar.application.schemas.conversation import (
+    ConversationCreateSchema,
+    ConversationDetailResponseSchema,
+    ConversationResponseSchema,
+    ConversationUpdateSchema,
+    MessageCreateSchema,
+    MessageResponseSchema,
+    SendMessageResponseSchema,
+)
 from masar.application.schemas.journey import (
     JourneyCreateSchema,
     JourneyResponseSchema,
@@ -55,6 +64,14 @@ __all__ = [
     "ChatMessageSchema",
     "ChatRequestSchema",
     "CompletionRequestSchema",
+    # Conversation
+    "ConversationCreateSchema",
+    "ConversationDetailResponseSchema",
+    "ConversationResponseSchema",
+    "ConversationUpdateSchema",
+    "MessageCreateSchema",
+    "MessageResponseSchema",
+    "SendMessageResponseSchema",
     # Journey
     "JourneyCreateSchema",
     "JourneyUpdateSchema",

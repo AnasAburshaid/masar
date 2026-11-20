@@ -20,6 +20,7 @@ from masar.domain.exceptions import (
     ValidationError,
 )
 from masar.presentation.api.routes.auth import router as auth_router
+from masar.presentation.api.routes.conversations import router as conversations_router
 from masar.presentation.api.routes.journeys import router as journeys_router
 from masar.presentation.api.routes.notes import router as notes_router
 from masar.presentation.api.routes.progress import router as progress_router
@@ -136,16 +137,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     # Attach settings and application services to app state
-    from masar.container import build_ai_service, build_container, build_user_service
+    from masar.container import (
+        build_ai_service,
+        build_container,
+        build_conversation_service,
+        build_user_service,
+    )
 
     app.state.settings = active_settings
     app.state.services = build_container(settings=active_settings)
     app.state.user_service = build_user_service(settings=active_settings)
-    app.state.ai_service = build_ai_service(settings=active_settings)
+    ai_service = build_ai_service(settings=active_settings)
+    app.state.ai_service = ai_service
+    app.state.conversation_service = build_conversation_service(
+        settings=active_settings, ai_service=ai_service
+    )
 
     # Include routers
     app.include_router(root_router)
     app.include_router(auth_router)
+    app.include_router(conversations_router)
     app.include_router(journeys_router)
     app.include_router(sections_router)
     app.include_router(topics_router)

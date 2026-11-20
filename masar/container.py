@@ -4,6 +4,7 @@ from pathlib import Path
 
 from masar.application.interfaces.ai import AIProvider
 from masar.application.interfaces.repositories import (
+    ConversationRepository,
     JourneyRepository,
     NoteRepository,
     SectionRepository,
@@ -12,6 +13,7 @@ from masar.application.interfaces.repositories import (
 )
 from masar.application.services import (
     AIService,
+    ConversationService,
     JourneyService,
     NoteService,
     ProgressService,
@@ -240,4 +242,56 @@ def build_ai_service(
         raise ValueError(f"Unknown AI provider: {resolved_provider}")
 
     return AIService(ai_provider=ai_provider)
+
+
+def build_conversation_service(
+    storage_type: str | None = None,
+    database_url: str | None = None,
+    settings: Settings | None = None,
+    ai_service: AIService | None = None,
+    conversation_repository: ConversationRepository | None = None,
+) -> ConversationService:
+    """Instantiate and wire up ConversationRepository, AIService, and ConversationService."""
+    active_settings = settings or get_settings()
+    resolved_ai = ai_service or build_ai_service(settings=active_settings)
+
+    if conversation_repository is not None:
+        return ConversationService(
+            conversation_repository=conversation_repository,
+            ai_service=resolved_ai,
+        )
+
+    resolved_storage = (
+        storage_type if storage_type is not None else active_settings.storage_type
+    )
+
+    conv_repo: ConversationRepository
+    if resolved_storage in ("database", "postgres"):
+        from masar.infrastructure.database.session import Base, get_engine, get_session_factory
+        from masar.infrastructure.repositories.database.conversation_repository import (
+            SqlConversationRepository,
+        )
+
+        resolved_db_url = (
+            database_url if database_url is not None else active_settings.database_url
+        )
+        engine = get_engine(resolved_db_url)
+        Base.metadata.create_all(bind=engine)
+        session_factory = get_session_factory(resolved_db_url)
+        db_session = session_factory()
+        conv_repo = SqlConversationRepository(db_session)
+    elif resolved_storage in ("in_memory", "json"):
+        from masar.infrastructure.repositories.in_memory.conversation_repository import (
+            InMemoryConversationRepository,
+        )
+
+        conv_repo = InMemoryConversationRepository()
+    else:
+        raise ValueError(f"Unknown storage type: {resolved_storage}")
+
+    return ConversationService(
+        conversation_repository=conv_repo,
+        ai_service=resolved_ai,
+    )
+
 

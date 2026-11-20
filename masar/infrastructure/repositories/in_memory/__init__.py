@@ -1,5 +1,8 @@
 """In-memory repositories package."""
 
+from masar.infrastructure.repositories.in_memory.conversation_repository import (
+    InMemoryConversationRepository,
+)
 from masar.infrastructure.repositories.in_memory.journey_repository import (
     InMemoryJourneyRepository,
 )
@@ -17,6 +20,7 @@ from masar.infrastructure.repositories.in_memory.user_repository import (
 )
 
 __all__ = [
+    "InMemoryConversationRepository",
     "InMemoryJourneyRepository",
     "InMemoryNoteRepository",
     "InMemorySectionRepository",

@@ -1,5 +1,8 @@
 """Repository abstractions package."""
 
+from masar.application.interfaces.repositories.conversation_repository import (
+    ConversationRepository,
+)
 from masar.application.interfaces.repositories.journey_repository import (
     JourneyRepository,
 )
@@ -11,6 +14,7 @@ from masar.application.interfaces.repositories.topic_repository import TopicRepo
 from masar.application.interfaces.repositories.user_repository import UserRepository
 
 __all__ = [
+    "ConversationRepository",
     "JourneyRepository",
     "NoteRepository",
     "SectionRepository",
