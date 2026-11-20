@@ -9,6 +9,7 @@ from masar.application.services import (
     ProgressService,
     SectionService,
     TopicService,
+    UserService,
 )
 from masar.config.settings import Settings, get_settings
 
@@ -69,3 +70,15 @@ def get_progress_service(
 ) -> ProgressService:
     """Dependency provider for ProgressService."""
     return services[4]
+
+
+def get_user_service(request: Request) -> UserService:
+    """Dependency provider for UserService."""
+    if hasattr(request.app.state, "user_service") and request.app.state.user_service is not None:
+        return request.app.state.user_service  # type: ignore[no-any-return]
+    from masar.container import build_user_service
+
+    settings = get_app_settings(request)
+    service = build_user_service(settings=settings)
+    request.app.state.user_service = service
+    return service

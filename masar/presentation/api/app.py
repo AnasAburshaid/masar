@@ -7,8 +7,10 @@ from masar.config.settings import Settings, get_settings
 from masar.domain.exceptions import (
     EntityNotFoundError,
     StorageError,
+    UserAlreadyExistsError,
     ValidationError,
 )
+from masar.presentation.api.routes.auth import router as auth_router
 from masar.presentation.api.routes.journeys import router as journeys_router
 from masar.presentation.api.routes.notes import router as notes_router
 from masar.presentation.api.routes.progress import router as progress_router
@@ -52,14 +54,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             content={"detail": f"Storage Error: {exc}"},
         )
 
+    @app.exception_handler(UserAlreadyExistsError)
+    async def user_already_exists_handler(request: Request, exc: UserAlreadyExistsError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={"detail": str(exc)},
+        )
+
     # Attach settings and application services to app state
-    from masar.container import build_container
+    from masar.container import build_container, build_user_service
 
     app.state.settings = active_settings
     app.state.services = build_container(settings=active_settings)
+    app.state.user_service = build_user_service(settings=active_settings)
 
     # Include routers
     app.include_router(root_router)
+    app.include_router(auth_router)
     app.include_router(journeys_router)
     app.include_router(sections_router)
     app.include_router(topics_router)

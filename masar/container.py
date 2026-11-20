@@ -7,6 +7,7 @@ from masar.application.interfaces.repositories import (
     NoteRepository,
     SectionRepository,
     TopicRepository,
+    UserRepository,
 )
 from masar.application.services import (
     JourneyService,
@@ -14,6 +15,7 @@ from masar.application.services import (
     ProgressService,
     SectionService,
     TopicService,
+    UserService,
 )
 from masar.config.settings import Settings, get_settings
 from masar.infrastructure.repositories.in_memory import (
@@ -143,3 +145,37 @@ def build_cli(
         note_service=note_service,
         progress_service=progress_service,
     )
+
+
+def build_user_service(
+    storage_type: str | None = None,
+    database_url: str | None = None,
+    settings: Settings | None = None,
+) -> UserService:
+    """Instantiate and wire up UserRepository and UserService."""
+    active_settings = settings or get_settings()
+    resolved_storage = storage_type if storage_type is not None else active_settings.storage_type
+
+    user_repo: UserRepository
+
+    if resolved_storage in ("database", "postgres"):
+        from masar.infrastructure.database.session import Base, get_engine, get_session_factory
+        from masar.infrastructure.repositories.database.user_repository import SqlUserRepository
+
+        resolved_db_url = database_url if database_url is not None else active_settings.database_url
+        engine = get_engine(resolved_db_url)
+        Base.metadata.create_all(bind=engine)
+        session_factory = get_session_factory(resolved_db_url)
+        db_session = session_factory()
+        user_repo = SqlUserRepository(db_session)
+    elif resolved_storage in ("in_memory", "json"):
+        from masar.infrastructure.repositories.in_memory.user_repository import InMemoryUserRepository
+
+        user_repo = InMemoryUserRepository()
+    else:
+        raise ValueError(f"Unknown storage type: {resolved_storage}")
+
+    from masar.infrastructure.security.password import Pbkdf2PasswordHasher
+
+    hasher = Pbkdf2PasswordHasher()
+    return UserService(user_repository=user_repo, password_hasher=hasher)

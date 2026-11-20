@@ -12,10 +12,14 @@ from masar.infrastructure.repositories.in_memory.section_repository import (
 from masar.infrastructure.repositories.in_memory.topic_repository import (
     InMemoryTopicRepository,
 )
+from masar.infrastructure.repositories.in_memory.user_repository import (
+    InMemoryUserRepository,
+)
 
 __all__ = [
     "InMemoryJourneyRepository",
     "InMemoryNoteRepository",
     "InMemorySectionRepository",
     "InMemoryTopicRepository",
+    "InMemoryUserRepository",
 ]
