@@ -30,6 +30,10 @@ class InMemoryJourneyRepository(JourneyRepository):
         """Get all journeys ordered by ID."""
         return list(self._journeys.values())
 
+    def get_by_user_id(self, user_id: int) -> list[Journey]:
+        """Get all journeys belonging to a specific user ordered by ID."""
+        return [j for j in self._journeys.values() if j.user_id == user_id]
+
     def update(self, journey: Journey) -> Journey:
         """Update an existing journey."""
         if journey.id is None or journey.id not in self._journeys:

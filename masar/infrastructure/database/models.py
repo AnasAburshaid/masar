@@ -13,6 +13,12 @@ class JourneyModel(Base):
     __tablename__ = "journeys"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
     title: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(String(1000), default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(

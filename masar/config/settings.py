@@ -43,6 +43,10 @@ class Settings(BaseSettings):
         default="development",
         description="Current runtime environment",
     )
+    strict_auth: bool = Field(
+        default=False,
+        description="Enforce strict authentication rejecting anonymous requests even in testing environment",
+    )
 
     model_config = SettingsConfigDict(
         env_prefix="MASAR_",

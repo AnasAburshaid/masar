@@ -8,7 +8,9 @@ from masar.application.schemas.progress import (
     SectionProgressSchema,
 )
 from masar.application.services import ProgressService, SectionService
+from masar.domain.models import User
 from masar.presentation.api.dependencies import (
+    get_current_user,
     get_progress_service,
     get_section_service,
 )
@@ -25,9 +27,12 @@ router = APIRouter(tags=["Progress"])
 def get_journey_progress(
     journey_id: Annotated[int, Path(..., gt=0, description="The positive ID of the journey")],
     progress_service: Annotated[ProgressService, Depends(get_progress_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> JourneyProgressSchema:
     """Retrieve overall learning progress and per-section progress breakdown for a journey."""
-    journey, overall, section_breakdown = progress_service.calculate_journey_detailed_progress(journey_id)
+    journey, overall, section_breakdown = progress_service.calculate_journey_detailed_progress(
+        journey_id, user_id=current_user.id
+    )
 
     sections_schema = [
         SectionProgressSchema(
@@ -62,10 +67,11 @@ def get_section_progress(
     section_id: Annotated[int, Path(..., gt=0, description="The positive ID of the section")],
     section_service: Annotated[SectionService, Depends(get_section_service)],
     progress_service: Annotated[ProgressService, Depends(get_progress_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> SectionProgressSchema:
     """Retrieve learning progress for a specific section."""
-    section = section_service.get_section(section_id)
-    prog = progress_service.calculate_section_progress(section_id)
+    section = section_service.get_section(section_id, user_id=current_user.id)
+    prog = progress_service.calculate_section_progress(section_id, user_id=current_user.id)
 
     return SectionProgressSchema(
         section_id=section_id,

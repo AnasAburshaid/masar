@@ -37,6 +37,7 @@ class JsonJourneyRepository(JourneyRepository):
 
         return Journey(
             id=item["id"],
+            user_id=item.get("user_id"),
             title=item["title"],
             description=item.get("description") or "",
             created_at=created_dt,
@@ -45,6 +46,7 @@ class JsonJourneyRepository(JourneyRepository):
     def _to_dict(self, journey: Journey) -> dict[str, Any]:
         return {
             "id": journey.id,
+            "user_id": journey.user_id,
             "title": journey.title,
             "description": journey.description,
             "created_at": journey.created_at.isoformat() if journey.created_at else None,
@@ -75,6 +77,10 @@ class JsonJourneyRepository(JourneyRepository):
         """Get all journeys ordered by ID."""
         data = self._storage.load()
         return [self._to_entity(item) for item in data["journeys"]]
+
+    def get_by_user_id(self, user_id: int) -> list[Journey]:
+        """Get all journeys belonging to a specific user ordered by ID."""
+        return [j for j in self.get_all() if j.user_id == user_id]
 
     def update(self, journey: Journey) -> Journey:
         """Update an existing journey."""

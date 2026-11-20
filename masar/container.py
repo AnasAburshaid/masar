@@ -100,10 +100,13 @@ def build_container(
         topic_repository=topic_repo,
         section_repository=section_repo,
         note_repository=note_repo,
+        journey_repository=journey_repo,
     )
     note_service = NoteService(
         note_repository=note_repo,
         topic_repository=topic_repo,
+        section_repository=section_repo,
+        journey_repository=journey_repo,
     )
     progress_service = ProgressService(
         journey_repository=journey_repo,

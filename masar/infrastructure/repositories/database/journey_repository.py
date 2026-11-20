@@ -21,6 +21,7 @@ class SqlJourneyRepository(JourneyRepository):
     def _to_entity(model: JourneyModel) -> Journey:
         return Journey(
             id=model.id,
+            user_id=model.user_id,
             title=model.title,
             description=model.description,
             created_at=model.created_at,
@@ -28,6 +29,7 @@ class SqlJourneyRepository(JourneyRepository):
 
     def add(self, entity: Journey) -> Journey:
         model = JourneyModel(
+            user_id=entity.user_id,
             title=entity.title,
             description=entity.description,
             created_at=entity.created_at,
@@ -43,6 +45,11 @@ class SqlJourneyRepository(JourneyRepository):
 
     def get_all(self) -> list[Journey]:
         stmt = select(JourneyModel).order_by(JourneyModel.id)
+        models = self._session.scalars(stmt).all()
+        return [self._to_entity(m) for m in models]
+
+    def get_by_user_id(self, user_id: int) -> list[Journey]:
+        stmt = select(JourneyModel).where(JourneyModel.user_id == user_id).order_by(JourneyModel.id)
         models = self._session.scalars(stmt).all()
         return [self._to_entity(m) for m in models]
 

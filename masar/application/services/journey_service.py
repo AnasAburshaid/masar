@@ -8,7 +8,7 @@ from masar.application.interfaces.repositories.section_repository import (
     SectionRepository,
 )
 from masar.application.interfaces.repositories.topic_repository import TopicRepository
-from masar.domain.exceptions import JourneyNotFoundError
+from masar.domain.exceptions import AccessDeniedError, JourneyNotFoundError
 from masar.domain.models import Journey
 
 
@@ -27,31 +27,46 @@ class JourneyService:
         self._topic_repository = topic_repository
         self._note_repository = note_repository
 
-    def create_journey(self, title: str, description: str = "") -> Journey:
+    def create_journey(
+        self,
+        title: str,
+        description: str = "",
+        user_id: int | None = None,
+    ) -> Journey:
         """Create a new learning journey."""
-        journey = Journey(title=title, description=description)
+        journey = Journey(title=title, description=description, user_id=user_id)
         return self._repository.add(journey)
 
-    def list_journeys(self) -> list[Journey]:
-        """Return all learning journeys."""
+    def list_journeys(self, user_id: int | None = None) -> list[Journey]:
+        """Return learning journeys, filtered by user_id if provided."""
+        if user_id is not None:
+            return self._repository.get_by_user_id(user_id)
         return self._repository.get_all()
 
-    def get_journey(self, journey_id: int) -> Journey:
-        """Retrieve a specific journey by ID."""
+    def get_journey(self, journey_id: int, user_id: int | None = None) -> Journey:
+        """Retrieve a specific journey by ID, ensuring ownership matches if user_id is provided."""
         journey = self._repository.get_by_id(journey_id)
         if not journey:
             raise JourneyNotFoundError(f"Journey with ID {journey_id} was not found.")
+        if user_id is not None and journey.user_id is not None and journey.user_id != user_id:
+            raise AccessDeniedError("You do not have permission to access this journey.")
         return journey
 
-    def update_journey(self, journey_id: int, title: str, description: str = "") -> Journey:
+    def update_journey(
+        self,
+        journey_id: int,
+        title: str,
+        description: str = "",
+        user_id: int | None = None,
+    ) -> Journey:
         """Update an existing learning journey's title and description."""
-        journey = self.get_journey(journey_id)
+        journey = self.get_journey(journey_id, user_id=user_id)
         journey.update(title=title, description=description)
         return self._repository.update(journey)
 
-    def delete_journey(self, journey_id: int) -> None:
+    def delete_journey(self, journey_id: int, user_id: int | None = None) -> None:
         """Delete a journey by ID and cascade delete associated sections/topics/notes."""
-        self.get_journey(journey_id)
+        self.get_journey(journey_id, user_id=user_id)
 
         # Cascade delete sections, topics, and notes if repositories are attached
         if self._section_repository:
