@@ -173,3 +173,50 @@ Run the test suite using Python's built-in `unittest`:
 ```bash
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
+
+### 5. Run the FastAPI REST API Server
+
+```bash
+uvicorn masar.presentation.api.app:app --reload --port 8000
+```
+
+The interactive API documentation is accessible at `http://localhost:8000/docs`.
+
+---
+
+## Frontend Setup (Next.js & TypeScript)
+
+The frontend application is built with Next.js (App Router), TypeScript, and Tailwind CSS.
+
+### 1. Install Frontend Dependencies
+
+```bash
+cd frontend
+npm install
+```
+
+### 2. Configure Environment
+
+Copy `.env.local.example` to `.env.local`:
+
+```bash
+cp .env.local.example .env.local
+```
+
+Default settings point to `NEXT_PUBLIC_API_URL=http://localhost:8000`.
+
+### 3. Run Development Server
+
+```bash
+npm run dev
+```
+
+The frontend will start at `http://localhost:3000`.
+
+### 4. Run Frontend Tests & Lint
+
+```bash
+npm test        # Run unit tests
+npm run lint    # Run ESLint
+npm run build   # Production build check
+```
