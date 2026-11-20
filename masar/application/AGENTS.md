@@ -19,6 +19,7 @@ masar/application/
 │   │   ├── user_repository.py
 │   │   ├── conversation_repository.py
 │   │   ├── action_proposal_repository.py
+│   │   ├── document_repository.py
 │   │   └── __init__.py
 │   ├── security/               # Security and cryptography abstractions
 │   │   ├── password_hasher.py  # ABC for password hashing and verification
@@ -39,6 +40,7 @@ masar/application/
 │   ├── ai.py                   # ChatMessageSchema, CompletionRequestSchema, ChatRequestSchema, AIResponseSchema
 │   ├── conversation.py         # ConversationCreate, ConversationDetail, MessageCreate/Response
 │   ├── action.py               # ProposedAction, ActionResult, ActionProposal schemas
+│   ├── document.py             # DocumentResponse, DocumentDetail, DocumentSummarizeResponse
 │   └── __init__.py
 ├── services/                   # Application Use Cases & Workflows
 │   ├── journey_service.py      # CRUD, filtering, and ownership verification for journeys
@@ -48,9 +50,11 @@ masar/application/
 │   ├── progress_service.py     # Aggregated progress calculations across roadmaps
 │   ├── user_service.py         # User registration, authentication, JWT token issuance
 │   ├── ai_service.py           # AI prompt & chat orchestration and domain validation
-│   ├── conversation_service.py # Personal mentor workflows, clarifying inquiries, auto-titling, and balanced proposal parsing
+│   ├── conversation_service.py # Personal mentor workflows, background awareness, document context injection, auto-titling, and balanced proposal parsing
 │   ├── tool_registry.py        # Controlled tool catalog and execution routing
 │   ├── action_service.py       # Human-in-the-loop proposal validation, approval, and execution
+│   ├── document_extractor.py   # Multi-format plain text extraction (PDF, TXT, MD)
+│   ├── document_service.py     # Document uploads, text extraction, AI summarization, and retrieval
 │   └── __init__.py
 ├── __init__.py                 # Top-level application re-exports
 └── AGENTS.md                   # This specification file

@@ -32,6 +32,15 @@ from masar.domain.exceptions.conversation import (
     EmptyMessageError,
     InvalidMessageRoleError,
 )
+from masar.domain.exceptions.document import (
+    DocumentAccessDeniedError,
+    DocumentError,
+    DocumentExtractionError,
+    DocumentNotFoundError,
+    EmptyDocumentError,
+    FileTooLargeError,
+    UnsupportedFileTypeError,
+)
 from masar.domain.exceptions.journey import JourneyNotFoundError
 from masar.domain.exceptions.note import NoteNotFoundError
 from masar.domain.exceptions.section import SectionNotFoundError
@@ -66,11 +75,17 @@ __all__ = [
     "ConversationAccessDeniedError",
     "ConversationNotFoundError",
     "CorruptedStorageError",
+    "DocumentAccessDeniedError",
+    "DocumentError",
+    "DocumentExtractionError",
+    "DocumentNotFoundError",
     "DomainError",
+    "EmptyDocumentError",
     "EmptyFieldError",
     "EmptyMessageError",
     "EntityNotFoundError",
     "FieldLengthError",
+    "FileTooLargeError",
     "InvalidActionParametersError",
     "InvalidCredentialsError",
     "InvalidIdError",
@@ -83,6 +98,7 @@ __all__ = [
     "StorageError",
     "TopicNotFoundError",
     "UnknownToolError",
+    "UnsupportedFileTypeError",
     "UserAlreadyExistsError",
     "UserNotFoundError",
     "ValidationError",

@@ -62,6 +62,19 @@ class StorageUserRecord(StorageRecordBase):
     created_at: str | None = Field(default=None)
 
 
+class StorageDocumentRecord(StorageRecordBase):
+    """Schema validating a persisted Document record."""
+
+    id: int = Field(..., gt=0, description="Unique positive document ID")
+    user_id: int = Field(..., gt=0, description="Owner user ID")
+    filename: str = Field(..., min_length=1, max_length=255)
+    file_type: str = Field(..., min_length=1, max_length=20)
+    file_size_bytes: int = Field(..., gt=0)
+    extracted_text: str = Field(...)
+    summary: str | None = Field(default=None)
+    created_at: str | None = Field(default=None)
+
+
 class StorageDataSchema(BaseModel):
     """Schema validating the full top-level JSON storage structure."""
 
@@ -72,6 +85,8 @@ class StorageDataSchema(BaseModel):
     sections: list[StorageSectionRecord] = Field(default_factory=list)
     topics: list[StorageTopicRecord] = Field(default_factory=list)
     notes: list[StorageNoteRecord] = Field(default_factory=list)
+    documents: list[StorageDocumentRecord] = Field(default_factory=list)
+
 
 
 def validate_storage_data(data: dict[str, Any]) -> StorageDataSchema:

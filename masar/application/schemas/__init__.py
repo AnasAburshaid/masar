@@ -23,6 +23,11 @@ from masar.application.schemas.conversation import (
     MessageResponseSchema,
     SendMessageResponseSchema,
 )
+from masar.application.schemas.document import (
+    DocumentDetailSchema,
+    DocumentResponseSchema,
+    DocumentSummarizeResponseSchema,
+)
 from masar.application.schemas.journey import (
     JourneyCreateSchema,
     JourneyResponseSchema,
@@ -85,6 +90,10 @@ __all__ = [
     "MessageCreateSchema",
     "MessageResponseSchema",
     "SendMessageResponseSchema",
+    # Document
+    "DocumentDetailSchema",
+    "DocumentResponseSchema",
+    "DocumentSummarizeResponseSchema",
     # Journey
     "JourneyCreateSchema",
     "JourneyUpdateSchema",

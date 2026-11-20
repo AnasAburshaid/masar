@@ -11,8 +11,9 @@ from masar.domain.exceptions import (
     TopicNotFoundError,
     UserAlreadyExistsError,
 )
-from masar.domain.models import Journey, Note, Section, Topic, User
+from masar.domain.models import Document, Journey, Note, Section, Topic, User
 from masar.infrastructure.repositories.json import (
+    JsonDocumentRepository,
     JsonJourneyRepository,
     JsonNoteRepository,
     JsonSectionRepository,
@@ -34,6 +35,7 @@ class TestJsonRepositories(unittest.TestCase):
         self.topic_repo = JsonTopicRepository(self.storage)
         self.note_repo = JsonNoteRepository(self.storage)
         self.user_repo = JsonUserRepository(self.storage)
+        self.doc_repo = JsonDocumentRepository(self.storage)
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
@@ -73,6 +75,45 @@ class TestJsonRepositories(unittest.TestCase):
         self.assertTrue(restarted_repo.delete(1))
         self.assertIsNone(restarted_repo.get_by_id(1))
         self.assertFalse(restarted_repo.delete(999))
+
+    def test_document_repository_crud_and_persistence(self) -> None:
+        doc = Document(
+            user_id=1,
+            filename="syllabus.md",
+            file_type="markdown",
+            file_size_bytes=1024,
+            extracted_text="# Syllabus\nContent",
+        )
+        added = self.doc_repo.add(doc)
+        self.assertEqual(added.id, 1)
+
+        # Get by id
+        found = self.doc_repo.get_by_id(1)
+        self.assertIsNotNone(found)
+        self.assertEqual(found.filename, "syllabus.md")
+
+        # List by user id
+        user1_docs = self.doc_repo.list_by_user_id(1)
+        self.assertEqual(len(user1_docs), 1)
+        user2_docs = self.doc_repo.list_by_user_id(2)
+        self.assertEqual(len(user2_docs), 0)
+
+        # Update
+        found.update_summary("AI Summary")
+        updated = self.doc_repo.update(found)
+        self.assertEqual(updated.summary, "AI Summary")
+
+        # Persistence across restart
+        new_storage = JsonStorage(self.file_path)
+        restarted_repo = JsonDocumentRepository(new_storage)
+        survived = restarted_repo.get_by_id(1)
+        self.assertIsNotNone(survived)
+        self.assertEqual(survived.summary, "AI Summary")
+
+        # Delete
+        self.assertTrue(restarted_repo.delete(1))
+        self.assertIsNone(restarted_repo.get_by_id(1))
+
 
         # Update nonexistent raises
         with self.assertRaises(JourneyNotFoundError):
@@ -195,6 +236,45 @@ class TestJsonRepositories(unittest.TestCase):
         self.assertTrue(restarted_repo.delete(1))
         self.assertIsNone(restarted_repo.get_by_id(1))
         self.assertFalse(restarted_repo.delete(999))
+
+    def test_document_repository_crud_and_persistence(self) -> None:
+        doc = Document(
+            user_id=1,
+            filename="syllabus.md",
+            file_type="markdown",
+            file_size_bytes=1024,
+            extracted_text="# Syllabus\nContent",
+        )
+        added = self.doc_repo.add(doc)
+        self.assertEqual(added.id, 1)
+
+        # Get by id
+        found = self.doc_repo.get_by_id(1)
+        self.assertIsNotNone(found)
+        self.assertEqual(found.filename, "syllabus.md")
+
+        # List by user id
+        user1_docs = self.doc_repo.list_by_user_id(1)
+        self.assertEqual(len(user1_docs), 1)
+        user2_docs = self.doc_repo.list_by_user_id(2)
+        self.assertEqual(len(user2_docs), 0)
+
+        # Update
+        found.update_summary("AI Summary")
+        updated = self.doc_repo.update(found)
+        self.assertEqual(updated.summary, "AI Summary")
+
+        # Persistence across restart
+        new_storage = JsonStorage(self.file_path)
+        restarted_repo = JsonDocumentRepository(new_storage)
+        survived = restarted_repo.get_by_id(1)
+        self.assertIsNotNone(survived)
+        self.assertEqual(survived.summary, "AI Summary")
+
+        # Delete
+        self.assertTrue(restarted_repo.delete(1))
+        self.assertIsNone(restarted_repo.get_by_id(1))
+
 
 
 if __name__ == "__main__":

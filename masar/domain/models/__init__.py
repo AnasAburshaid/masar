@@ -3,6 +3,7 @@
 from masar.domain.models.action import ActionProposal, ActionResult, ProposedAction
 from masar.domain.models.ai import AIResponse, AIUsage, ChatMessage
 from masar.domain.models.conversation import Conversation, ConversationMessage
+from masar.domain.models.document import Document
 from masar.domain.models.journey import Journey
 from masar.domain.models.note import Note
 from masar.domain.models.progress import Progress
@@ -18,6 +19,7 @@ __all__ = [
     "ChatMessage",
     "Conversation",
     "ConversationMessage",
+    "Document",
     "Journey",
     "Note",
     "Progress",

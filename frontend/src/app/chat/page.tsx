@@ -7,29 +7,36 @@ import { actionService } from '@/services/api/actions';
 import { Conversation, ConversationDetail, ConversationMessage } from '@/types/conversation';
 import { ActionProposal } from '@/types/action';
 import { ActionProposalCard } from '@/components/chat/ActionProposalCard';
+import { DocumentManagerModal } from '@/components/chat/DocumentManagerModal';
+import { DocumentItem } from '@/types/document';
 import { MarkdownRenderer } from '@/components/chat/MarkdownRenderer';
 import { ApiError } from '@/services/api/errors';
 
 const PROMPT_SUGGESTIONS = [
   {
-    title: 'Design Learning Roadmap',
-    description: 'Structure an end-to-end plan for Distributed Systems',
-    prompt: 'Help me design a comprehensive, production-grade learning roadmap for Distributed Systems. Break it into foundational, intermediate, and advanced stages.',
+    title: 'Analyze Resume or Syllabus',
+    description: 'Extract skills and recommend personalized pathways',
+    prompt: 'Analyze my attached document (resume, syllabus, or RFC) and propose an optimal, structured learning roadmap in Masar.',
+  },
+  {
+    title: 'Personalized Learning Plan',
+    description: 'Provide your background, goal, and weekly availability',
+    prompt: 'Help me plan a personalized learning roadmap. I am an intermediate backend developer looking to specialize in Distributed Systems & High-Throughput Architecture. I have ~6 hours per week. Where should we begin?',
+  },
+  {
+    title: 'Refine Existing Roadmaps',
+    description: 'Add sections, topics, or practical projects to your journeys',
+    prompt: 'Review my existing learning roadmaps in Masar and propose the next logical section and practical exercises to advance my skills.',
   },
   {
     title: 'Clarify Technical Concept',
-    description: 'Explain PostgreSQL MVCC & transaction isolation',
+    description: 'Explain PostgreSQL MVCC & snapshot isolation',
     prompt: 'Explain how PostgreSQL implements Multi-Version Concurrency Control (MVCC) and how snapshot isolation prevents dirty reads.',
   },
   {
-    title: 'Best Practices & Architecture',
-    description: 'Review microservice resilience and circuit breakers',
-    prompt: 'What are the essential architectural patterns for resilient microservices? Explain circuit breakers, retry backoffs, and fallback strategies.',
-  },
-  {
-    title: 'Interview & Deep Dive',
-    description: 'Prepare for Senior Backend engineering topics',
-    prompt: 'Give me 3 deep-dive architectural interview questions on caching strategies and high-throughput write pipelines with Redis and Kafka.',
+    title: 'Architecture & Resilience',
+    description: 'Circuit breakers, retry backoffs, and fallback patterns',
+    prompt: 'What are the essential architectural patterns for resilient microservices? Explain circuit breakers, retry backoffs, and fallback strategies with practical examples.',
   },
 ];
 
@@ -54,6 +61,8 @@ export default function ChatPage() {
   const [inputContent, setInputContent] = useState('');
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDocModalOpen, setIsDocModalOpen] = useState(false);
+  const [activeDocument, setActiveDocument] = useState<DocumentItem | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -237,7 +246,10 @@ export default function ChatPage() {
     setIsSending(true);
 
     try {
-      const result = await conversationService.sendMessage(currentConvId, { content });
+      const result = await conversationService.sendMessage(currentConvId, {
+        content,
+        document_id: activeDocument?.id || null,
+      });
 
       setActiveDetail((prev) => {
         const base = prev || targetConv;
@@ -421,11 +433,29 @@ export default function ChatPage() {
                   {activeDetail?.title || 'Masar AI Assistant'}
                 </h1>
               </div>
-              <div className="hidden sm:flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono">
-                  nemotron-3-ultra
-                </span>
-                <span>• Multi-Turn Context</span>
+              <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                <button
+                  type="button"
+                  onClick={() => setIsDocModalOpen(true)}
+                  className={`px-2.5 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                    activeDocument
+                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                      : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                  }`}
+                  title="Manage learning documents and resumes"
+                >
+                  <span>📁</span>
+                  <span>Documents</span>
+                  {activeDocument && (
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  )}
+                </button>
+                <div className="hidden sm:flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono">
+                    nemotron-3-ultra
+                  </span>
+                  <span>• Multi-Turn Context</span>
+                </div>
               </div>
             </div>
 
@@ -593,7 +623,38 @@ export default function ChatPage() {
 
             {/* Input Composer Footer */}
             <div className="p-3 sm:p-4 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/30">
+              {/* Active Document Attachment Pill */}
+              {activeDocument && (
+                <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/50 border border-emerald-200/90 dark:border-emerald-800/70 text-xs text-emerald-900 dark:text-emerald-200 shadow-2xs">
+                  <span className="text-sm">📄</span>
+                  <span className="font-bold text-[11px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                    Attached Context:
+                  </span>
+                  <span className="truncate max-w-xs font-semibold">{activeDocument.filename}</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded uppercase bg-emerald-200/70 dark:bg-emerald-800/60 text-emerald-900 dark:text-emerald-100">
+                    {activeDocument.file_type}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveDocument(null)}
+                    className="ml-auto p-0.5 text-slate-400 hover:text-rose-500 rounded transition-colors text-xs font-bold"
+                    title="Detach document from chat context"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
               <div className="relative flex items-end gap-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 focus-within:border-emerald-500 dark:focus-within:border-emerald-500 transition-colors p-2 shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => setIsDocModalOpen(true)}
+                  disabled={isSending}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center flex-shrink-0"
+                  title="Upload or attach documents (Resume, Syllabus, Spec)"
+                >
+                  <span className="text-base">📎</span>
+                </button>
                 <textarea
                   ref={textareaRef}
                   value={inputContent}
@@ -624,6 +685,20 @@ export default function ChatPage() {
             </div>
           </main>
         </div>
+
+        {/* Document Management & Context Modal */}
+        <DocumentManagerModal
+          isOpen={isDocModalOpen}
+          onClose={() => setIsDocModalOpen(false)}
+          activeDocumentId={activeDocument?.id || null}
+          onSelectDocument={(doc) => setActiveDocument(doc)}
+          onAttachAndPlan={(doc) => {
+            setActiveDocument(doc);
+            const prompt = `I have attached my document '${doc.filename}'. Please analyze my current technical skills and gaps based on this document, and build a tailored learning roadmap with concrete sections and topics.`;
+            setInputContent(prompt);
+            setTimeout(() => textareaRef.current?.focus(), 50);
+          }}
+        />
       </div>
     </ProtectedRoute>
   );

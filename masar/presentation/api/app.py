@@ -14,13 +14,21 @@ from masar.domain.exceptions import (
     AIRateLimitError,
     AITimeoutError,
     AuthenticationError,
+    DocumentAccessDeniedError,
+    DocumentError,
+    DocumentExtractionError,
+    DocumentNotFoundError,
+    EmptyDocumentError,
     EntityNotFoundError,
+    FileTooLargeError,
     StorageError,
+    UnsupportedFileTypeError,
     UserAlreadyExistsError,
     ValidationError,
 )
 from masar.presentation.api.routes.auth import router as auth_router
 from masar.presentation.api.routes.conversations import router as conversations_router
+from masar.presentation.api.routes.documents import router as documents_router
 from masar.presentation.api.routes.journeys import router as journeys_router
 from masar.presentation.api.routes.notes import router as notes_router
 from masar.presentation.api.routes.progress import router as progress_router
@@ -136,6 +144,55 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             content={"detail": str(exc)},
         )
 
+    @app.exception_handler(DocumentNotFoundError)
+    async def document_not_found_handler(request: Request, exc: DocumentNotFoundError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(DocumentAccessDeniedError)
+    async def document_access_denied_handler(request: Request, exc: DocumentAccessDeniedError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(FileTooLargeError)
+    async def file_too_large_handler(request: Request, exc: FileTooLargeError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(UnsupportedFileTypeError)
+    async def unsupported_file_type_handler(request: Request, exc: UnsupportedFileTypeError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(DocumentExtractionError)
+    async def document_extraction_handler(request: Request, exc: DocumentExtractionError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(EmptyDocumentError)
+    async def empty_document_handler(request: Request, exc: EmptyDocumentError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(DocumentError)
+    async def document_error_handler(request: Request, exc: DocumentError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": str(exc)},
+        )
+
     # Attach settings and application services to app state
     from masar.application.services.tool_registry import ServicesBundle
     from masar.container import (
@@ -143,6 +200,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         build_ai_service,
         build_container,
         build_conversation_service,
+        build_document_service,
         build_user_service,
     )
 
@@ -152,6 +210,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.user_service = build_user_service(settings=active_settings)
     ai_service = build_ai_service(settings=active_settings)
     app.state.ai_service = ai_service
+
+    document_service = build_document_service(
+        settings=active_settings, ai_service=ai_service
+    )
+    app.state.document_service = document_service
 
     bundle = ServicesBundle(
         journey_service=services_tuple[0],
@@ -169,12 +232,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         settings=active_settings,
         ai_service=ai_service,
         action_service=action_service,
+        services_bundle=bundle,
+        document_repository=document_service._repo,
     )
 
     # Include routers
     app.include_router(root_router)
     app.include_router(auth_router)
     app.include_router(conversations_router)
+    app.include_router(documents_router)
     app.include_router(journeys_router)
     app.include_router(sections_router)
     app.include_router(topics_router)
