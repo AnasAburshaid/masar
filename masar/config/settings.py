@@ -47,6 +47,10 @@ class Settings(BaseSettings):
         default=False,
         description="Enforce strict authentication rejecting anonymous requests even in testing environment",
     )
+    cors_origins: list[str] = Field(
+        default=["http://localhost:3000", "http://127.0.0.1:3000"],
+        description="Allowed CORS origins for frontend-backend communication",
+    )
 
     model_config = SettingsConfigDict(
         env_prefix="MASAR_",
