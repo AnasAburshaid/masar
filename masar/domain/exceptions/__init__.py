@@ -17,6 +17,12 @@ from masar.domain.exceptions.base import (
     InvalidIdError,
     ValidationError,
 )
+from masar.domain.exceptions.conversation import (
+    ConversationAccessDeniedError,
+    ConversationNotFoundError,
+    EmptyMessageError,
+    InvalidMessageRoleError,
+)
 from masar.domain.exceptions.journey import JourneyNotFoundError
 from masar.domain.exceptions.note import NoteNotFoundError
 from masar.domain.exceptions.section import SectionNotFoundError
@@ -43,13 +49,17 @@ __all__ = [
     "AITimeoutError",
     "AccessDeniedError",
     "AuthenticationError",
+    "ConversationAccessDeniedError",
+    "ConversationNotFoundError",
     "CorruptedStorageError",
     "DomainError",
     "EmptyFieldError",
+    "EmptyMessageError",
     "EntityNotFoundError",
     "FieldLengthError",
     "InvalidCredentialsError",
     "InvalidIdError",
+    "InvalidMessageRoleError",
     "InvalidTokenError",
     "JourneyNotFoundError",
     "NoteNotFoundError",

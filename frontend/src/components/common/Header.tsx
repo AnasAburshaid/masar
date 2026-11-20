@@ -64,6 +64,13 @@ export function Header() {
               >
                 Journeys
               </Link>
+              <Link
+                href="/chat"
+                className="text-xs font-medium text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors flex items-center gap-1.5"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>AI Chat</span>
+              </Link>
               <button
                 onClick={logout}
                 title={user?.email ? `Signed in as ${user.email}` : 'Sign out'}

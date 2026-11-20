@@ -21,6 +21,7 @@ masar/infrastructure/
 │   │   ├── topic_repository.py
 │   │   ├── note_repository.py
 │   │   ├── user_repository.py
+│   │   ├── conversation_repository.py
 │   │   └── __init__.py
 │   ├── in_memory/              # In-memory dictionaries for testing and rapid verification
 │   │   └── ...

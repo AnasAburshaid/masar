@@ -17,6 +17,7 @@ masar/presentation/
 │   │   ├── sections.py         # /sections & /journeys/{journey_id}/sections
 │   │   ├── topics.py           # /topics & status toggles (/complete, /pending)
 │   │   ├── notes.py            # /notes & /topics/{topic_id}/notes
+│   │   ├── conversations.py    # /conversations (CRUD & multi-turn /messages chat)
 │   │   ├── progress.py         # /journeys/{journey_id}/progress & /sections/{id}/progress
 │   │   ├── root.py             # / (API metadata) & /health (health check)
 │   │   └── __init__.py

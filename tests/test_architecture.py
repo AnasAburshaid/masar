@@ -136,11 +136,26 @@ class TestArchitectureAndDependencyDirection(unittest.TestCase):
         from masar.application.services.ai_service import AIService
         from masar.infrastructure.ai.mock_provider import MockAIProvider
         from masar.infrastructure.ai.openrouter_provider import OpenRouterProvider
+        from masar.domain.models.conversation import Conversation, ConversationMessage
+        from masar.domain.exceptions.conversation import ConversationNotFoundError
+        from masar.application.interfaces.repositories.conversation_repository import (
+            ConversationRepository,
+        )
+        from masar.application.services.conversation_service import ConversationService
+        from masar.infrastructure.repositories.database.conversation_repository import (
+            SqlConversationRepository,
+        )
+        from masar.infrastructure.repositories.in_memory.conversation_repository import (
+            InMemoryConversationRepository,
+        )
 
         self.assertTrue(issubclass(InMemoryJourneyRepository, JourneyRepository))
         self.assertTrue(issubclass(InMemorySectionRepository, SectionRepository))
         self.assertTrue(issubclass(InMemoryTopicRepository, TopicRepository))
         self.assertTrue(issubclass(InMemoryNoteRepository, NoteRepository))
+        self.assertTrue(issubclass(SqlConversationRepository, ConversationRepository))
+        self.assertTrue(issubclass(InMemoryConversationRepository, ConversationRepository))
+        self.assertTrue(issubclass(ConversationNotFoundError, EntityNotFoundError))
         self.assertTrue(issubclass(JsonJourneyRepository, JourneyRepository))
         self.assertTrue(issubclass(JsonSectionRepository, SectionRepository))
         self.assertTrue(issubclass(JsonTopicRepository, TopicRepository))

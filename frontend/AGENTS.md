@@ -21,6 +21,7 @@ frontend/
 │   │   ├── journeys/
 │   │   │   ├── page.tsx        # Journeys list, creation modal, edit/delete dialogs
 │   │   │   └── [id]/page.tsx   # Journey Canvas (sections, topics, notes drawer, live progress)
+│   │   └── chat/page.tsx       # AI Conversation Hub (multi-turn chat, prompt cards, sidebar history)
 │   ├── components/             # Reusable UI components
 │   │   ├── common/             # Header, Footer, HealthWidget, ThemeToggle
 │   │   ├── layout/             # AppLayout (responsive sidebar, user profile card)
@@ -36,10 +37,12 @@ frontend/
 │   │   ├── sections.ts         # /sections CRUD
 │   │   ├── topics.ts           # /topics CRUD and status toggles (/complete, /pending)
 │   │   ├── notes.ts            # /notes CRUD
+│   │   ├── conversations.ts    # /conversations CRUD and message submission
 │   │   ├── progress.ts         # /journeys/{id}/progress & dashboard metrics aggregator
 │   │   └── health.ts           # /health and root status
 │   ├── types/                  # TypeScript interfaces (matching backend Pydantic schemas)
 │   │   ├── auth.ts
+│   │   ├── conversation.ts
 │   │   ├── health.ts
 │   │   ├── journey.ts
 │   │   └── progress.ts

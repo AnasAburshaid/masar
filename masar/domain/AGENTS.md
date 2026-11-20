@@ -18,6 +18,7 @@ masar/domain/
 │   ├── progress.py             # Progress value object (calculation results, percentages, completion status)
 │   ├── user.py                 # User entity (account identity, email, password hash)
 │   ├── ai.py                   # AI value objects (ChatMessage, AIUsage, AIResponse)
+│   ├── conversation.py         # Conversation and ConversationMessage entities
 │   └── __init__.py             # Re-exports of all domain models
 ├── exceptions/                 # Granular domain exception hierarchy
 │   ├── base.py                 # DomainError base class and semantic classifications
@@ -27,6 +28,7 @@ masar/domain/
 │   ├── note.py                 # NoteNotFound, NoteContentRequired, etc.
 │   ├── user.py                 # UserNotFound, UserAlreadyExists, InvalidCredentials, etc.
 │   ├── ai.py                   # AIError, AIAuthenticationError, AIRateLimitError, AITimeoutError, etc.
+│   ├── conversation.py         # ConversationNotFound, ConversationAccessDenied, etc.
 │   ├── storage.py              # Domain-level persistence failure exceptions
 │   └── __init__.py             # Clean re-exports of all domain exceptions
 ├── types.py                    # Domain enums and type aliases (e.g., TopicStatus)
