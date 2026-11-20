@@ -5,6 +5,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from masar.application.services import (
+    ActionService,
     AIService,
     ConversationService,
     JourneyService,
@@ -115,6 +116,21 @@ def get_conversation_service(request: Request) -> ConversationService:
     settings = get_app_settings(request)
     service = build_conversation_service(settings=settings)
     request.app.state.conversation_service = service
+    return service
+
+
+def get_action_service(request: Request) -> ActionService:
+    """Dependency provider for ActionService."""
+    if (
+        hasattr(request.app.state, "action_service")
+        and request.app.state.action_service is not None
+    ):
+        return request.app.state.action_service  # type: ignore[no-any-return]
+    from masar.container import build_action_service
+
+    settings = get_app_settings(request)
+    service = build_action_service(settings=settings)
+    request.app.state.action_service = service
     return service
 
 

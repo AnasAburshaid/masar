@@ -1,5 +1,14 @@
 """Domain exceptions package."""
 
+from masar.domain.exceptions.action import (
+    ActionError,
+    ActionExecutionError,
+    ActionProposalAccessDeniedError,
+    ActionProposalAlreadyResolvedError,
+    ActionProposalNotFoundError,
+    InvalidActionParametersError,
+    UnknownToolError,
+)
 from masar.domain.exceptions.ai import (
     AIAuthenticationError,
     AIConfigurationError,
@@ -48,6 +57,11 @@ __all__ = [
     "AIRateLimitError",
     "AITimeoutError",
     "AccessDeniedError",
+    "ActionError",
+    "ActionExecutionError",
+    "ActionProposalAccessDeniedError",
+    "ActionProposalAlreadyResolvedError",
+    "ActionProposalNotFoundError",
     "AuthenticationError",
     "ConversationAccessDeniedError",
     "ConversationNotFoundError",
@@ -57,6 +71,7 @@ __all__ = [
     "EmptyMessageError",
     "EntityNotFoundError",
     "FieldLengthError",
+    "InvalidActionParametersError",
     "InvalidCredentialsError",
     "InvalidIdError",
     "InvalidMessageRoleError",
@@ -67,6 +82,7 @@ __all__ = [
     "StorageAccessError",
     "StorageError",
     "TopicNotFoundError",
+    "UnknownToolError",
     "UserAlreadyExistsError",
     "UserNotFoundError",
     "ValidationError",

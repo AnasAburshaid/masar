@@ -25,7 +25,8 @@ frontend/
 │   ├── components/             # Reusable UI components
 │   │   ├── common/             # Header, Footer, HealthWidget, ThemeToggle
 │   │   ├── layout/             # AppLayout (responsive sidebar, user profile card)
-│   │   └── auth/               # ProtectedRoute (session guard and redirection)
+│   │   ├── auth/               # ProtectedRoute (session guard and redirection)
+│   │   └── chat/               # ActionProposalCard (AI action review, approval, rejection)
 │   ├── context/                # Global React context providers
 │   │   ├── AuthContext.tsx     # Session state, JWT token storage, login/logout actions
 │   │   └── ThemeContext.tsx    # Light/Dark/System theme management with persistence
@@ -38,9 +39,11 @@ frontend/
 │   │   ├── topics.ts           # /topics CRUD and status toggles (/complete, /pending)
 │   │   ├── notes.ts            # /notes CRUD
 │   │   ├── conversations.ts    # /conversations CRUD and message submission
+│   │   ├── actions.ts          # /conversations/{id}/proposals (list, get, approve, reject)
 │   │   ├── progress.ts         # /journeys/{id}/progress & dashboard metrics aggregator
 │   │   └── health.ts           # /health and root status
 │   ├── types/                  # TypeScript interfaces (matching backend Pydantic schemas)
+│   │   ├── action.ts
 │   │   ├── auth.ts
 │   │   ├── conversation.ts
 │   │   ├── health.ts

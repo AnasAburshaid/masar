@@ -1,3 +1,5 @@
+import { ActionProposal } from './action';
+
 export type MessageRole = 'user' | 'assistant' | 'system';
 
 export interface ConversationMessage {
@@ -18,6 +20,7 @@ export interface Conversation {
 
 export interface ConversationDetail extends Conversation {
   messages: ConversationMessage[];
+  proposals?: ActionProposal[];
 }
 
 export interface CreateConversationPayload {
@@ -35,4 +38,5 @@ export interface SendMessagePayload {
 export interface SendMessageResponse {
   user_message: ConversationMessage;
   assistant_message: ConversationMessage;
+  action_proposal?: ActionProposal | null;
 }

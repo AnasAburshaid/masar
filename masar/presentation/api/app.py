@@ -137,7 +137,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     # Attach settings and application services to app state
+    from masar.application.services.tool_registry import ServicesBundle
     from masar.container import (
+        build_action_service,
         build_ai_service,
         build_container,
         build_conversation_service,
@@ -145,12 +147,28 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
 
     app.state.settings = active_settings
-    app.state.services = build_container(settings=active_settings)
+    services_tuple = build_container(settings=active_settings)
+    app.state.services = services_tuple
     app.state.user_service = build_user_service(settings=active_settings)
     ai_service = build_ai_service(settings=active_settings)
     app.state.ai_service = ai_service
+
+    bundle = ServicesBundle(
+        journey_service=services_tuple[0],
+        section_service=services_tuple[1],
+        topic_service=services_tuple[2],
+        note_service=services_tuple[3],
+        progress_service=services_tuple[4],
+    )
+    action_service = build_action_service(
+        settings=active_settings, services_bundle=bundle
+    )
+    app.state.action_service = action_service
+
     app.state.conversation_service = build_conversation_service(
-        settings=active_settings, ai_service=ai_service
+        settings=active_settings,
+        ai_service=ai_service,
+        action_service=action_service,
     )
 
     # Include routers
