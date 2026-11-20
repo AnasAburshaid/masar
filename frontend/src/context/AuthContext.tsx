@@ -17,19 +17,9 @@ const STORAGE_KEY = 'masar_session_token';
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem(STORAGE_KEY);
-    }
-    return null;
-  });
+  const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return Boolean(sessionStorage.getItem(STORAGE_KEY));
-    }
-    return false;
-  });
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Synchronize token provider with API client
   useEffect(() => {
@@ -54,37 +44,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [logout]);
 
-  // Load and validate user profile when token exists or changes
+  // Initialize session on client mount
   useEffect(() => {
     let isCancelled = false;
 
-    if (!token) {
-      return;
-    }
+    const initAuth = async () => {
+      try {
+        const savedToken = typeof window !== 'undefined' ? sessionStorage.getItem(STORAGE_KEY) : null;
+        if (!savedToken) {
+          if (!isCancelled) {
+            setIsLoading(false);
+          }
+          return;
+        }
 
-    authService
-      .getCurrentUser(token)
-      .then((profile) => {
+        setToken(savedToken);
+        const profile = await authService.getCurrentUser(savedToken);
         if (!isCancelled) {
           setUser(profile);
-          setIsLoading(false);
         }
-      })
-      .catch(() => {
+      } catch {
         if (!isCancelled) {
           if (typeof window !== 'undefined') {
             sessionStorage.removeItem(STORAGE_KEY);
           }
           setToken(null);
           setUser(null);
+        }
+      } finally {
+        if (!isCancelled) {
           setIsLoading(false);
         }
-      });
+      }
+    };
+
+    initAuth();
 
     return () => {
       isCancelled = true;
     };
-  }, [token]);
+  }, []);
 
   const login = async (credentials: LoginCredentials): Promise<void> => {
     const authResult = await authService.login(credentials);
