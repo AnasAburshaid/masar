@@ -15,13 +15,17 @@ class Settings(BaseSettings):
         default="Masar - Developer Learning Tracker",
         description="Application title and display name",
     )
-    storage_type: Literal["json", "in_memory"] = Field(
+    storage_type: Literal["json", "in_memory", "database", "postgres"] = Field(
         default="json",
-        description="Persistence storage mechanism ('json' or 'in_memory')",
+        description="Persistence storage mechanism ('json', 'in_memory', or 'database')",
     )
     data_file: Path = Field(
         default=Path("masar_data.json"),
         description="Path to persistence JSON file",
+    )
+    database_url: str = Field(
+        default="postgresql://postgres:postgres@localhost:5432/masar",
+        description="PostgreSQL or SQLAlchemy database connection URL",
     )
     environment: Literal["development", "testing", "production"] = Field(
         default="development",

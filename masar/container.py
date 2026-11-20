@@ -35,6 +35,7 @@ from masar.presentation.cli import CLI
 def build_container(
     storage_type: str | None = None,
     data_file: str | Path | None = None,
+    database_url: str | None = None,
     settings: Settings | None = None,
 ) -> tuple[
     JourneyService, SectionService, TopicService, NoteService, ProgressService
@@ -60,6 +61,24 @@ def build_container(
         section_repo = InMemorySectionRepository()
         topic_repo = InMemoryTopicRepository()
         note_repo = InMemoryNoteRepository()
+    elif resolved_storage in ("database", "postgres"):
+        from masar.infrastructure.database.session import Base, get_engine, get_session_factory
+        from masar.infrastructure.repositories.database import (
+            SqlJourneyRepository,
+            SqlNoteRepository,
+            SqlSectionRepository,
+            SqlTopicRepository,
+        )
+
+        resolved_db_url = database_url if database_url is not None else active_settings.database_url
+        engine = get_engine(resolved_db_url)
+        Base.metadata.create_all(bind=engine)
+        session_factory = get_session_factory(resolved_db_url)
+        db_session = session_factory()
+        journey_repo = SqlJourneyRepository(db_session)
+        section_repo = SqlSectionRepository(db_session)
+        topic_repo = SqlTopicRepository(db_session)
+        note_repo = SqlNoteRepository(db_session)
     else:
         raise ValueError(f"Unknown storage type: {resolved_storage}")
 
@@ -101,6 +120,7 @@ def build_container(
 def build_cli(
     storage_type: str | None = None,
     data_file: str | Path | None = None,
+    database_url: str | None = None,
     settings: Settings | None = None,
 ) -> CLI:
     """Build and configure the CLI presentation with wired application services."""
@@ -113,6 +133,7 @@ def build_cli(
     ) = build_container(
         storage_type=storage_type,
         data_file=data_file,
+        database_url=database_url,
         settings=settings,
     )
     return CLI(
