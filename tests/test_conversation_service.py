@@ -151,6 +151,43 @@ class TestConversationService(unittest.TestCase):
                 conversation_id=conv.id or 1, user_id=1, content="   "
             )
 
+    def test_extract_action_proposal_cleans_content_completely(self) -> None:
+        content_with_json = (
+            "I have designed a comprehensive 12-week roadmap for you!\n\n"
+            "### Learning Phases\n"
+            "- Phase 1: Core Networking\n"
+            "- Phase 2: Consensus\n\n"
+            "```proposal\n"
+            "{\n"
+            '  "action_proposal": {\n'
+            '    "title": "Distributed Systems Roadmap",\n'
+            '    "actions": [\n'
+            '      {\n'
+            '        "tool": "create_journey",\n'
+            '        "description": "Create Distributed Systems journey",\n'
+            '        "parameters": {"title": "Distributed Systems", "description": "12-week deep dive"}\n'
+            '      },\n'
+            '      {\n'
+            '        "tool": "create_section",\n'
+            '        "description": "Foundations section",\n'
+            '        "parameters": {"journey_id": "$0.id", "title": "Foundations"}\n'
+            '      }\n'
+            '    ]\n'
+            '  }\n'
+            "}\n"
+            "```"
+        )
+        cleaned, proposal = self.service._extract_action_proposal(content_with_json)
+        self.assertIsNotNone(proposal)
+        self.assertEqual(proposal["title"], "Distributed Systems Roadmap")
+        self.assertEqual(len(proposal["actions"]), 2)
+        # Ensure all raw JSON and fences are removed from conversational text
+        self.assertNotIn("```proposal", cleaned)
+        self.assertNotIn("action_proposal", cleaned)
+        self.assertNotIn("create_journey", cleaned)
+        self.assertIn("I have designed a comprehensive 12-week roadmap for you!", cleaned)
+        self.assertIn("### Learning Phases", cleaned)
+
 
 if __name__ == "__main__":
     unittest.main()

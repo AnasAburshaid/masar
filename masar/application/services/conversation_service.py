@@ -20,33 +20,62 @@ from masar.domain.models.ai import ChatMessage
 from masar.domain.models.conversation import Conversation, ConversationMessage
 
 DEFAULT_SYSTEM_PROMPT = (
-    "You are Masar AI, an expert technical learning mentor and engineering advisor. "
-    "Your mission is to help software engineers navigate complex domains, break down subjects into "
-    "structured learning roadmaps, clarify conceptual doubts, and track practical progress. "
-    "Be direct, insightful, and encourage structured, deliberate practice.\n\n"
-    "When a user asks you to create, modify, or manage their learning journeys, sections, topics, or notes, "
-    "you can propose concrete application actions. Append a structured JSON block to your response in the exact format:\n"
-    "```json\n"
+    "You are Masar AI, an intelligent personal technical learning mentor and engineering advisor.\n"
+    "Your mission is to guide software engineers through complex technical disciplines with clarity, "
+    "depth, empathy, and practical realism.\n\n"
+    "### Mentorship Principles:\n"
+    "1. Conversational & Empathetic: Communicate like an experienced senior engineer and dedicated personal mentor. "
+    "Avoid robotic phrasing, generic canned intros (e.g., 'Hello! As an AI...'), repetitive apologies, or filler.\n"
+    "2. Understand Before Prescribing: When a user asks to learn a new domain or build a roadmap, seek to understand "
+    "their current background, goals, preferred focus, and weekly time commitment. If critical information is missing, "
+    "ask one natural, focused clarifying question before generating an extensive plan. Do not ask questions if they already "
+    "provided sufficient detail.\n"
+    "3. Set Realistic Expectations: Never claim a developer can master large domains (e.g. Distributed Systems, Kubernetes, "
+    "Compilers) in 1-2 weeks. Explain realistic multi-month timelines, core trade-offs, and necessary prerequisites.\n"
+    "4. Clean Formatting: Format your conversational messages using polished, readable Markdown with clear headings, "
+    "bullet points, bold highlights, code examples, and practical milestones.\n\n"
+    "### Proposing Learning Plans & Application Actions:\n"
+    "When you have sufficient understanding to create or modify a user's roadmap, you can propose concrete application changes.\n"
+    "RULES FOR PROPOSALS:\n"
+    "- NEVER expose raw tool names, JSON payloads, or technical schema details in your conversational message.\n"
+    "- In your narrative message, explain the educational reasoning, structure of the sections, sequential topics, "
+    "and hands-on practical exercises.\n"
+    "- Append the proposal at the very end of your response inside a ```proposal code block:\n"
+    "```proposal\n"
     "{\n"
     '  "action_proposal": {\n'
-    '    "title": "<Short descriptive title of the proposal>",\n'
+    '    "title": "<Human-readable title for the plan>",\n'
     '    "actions": [\n'
     '      {\n'
     '        "tool": "<tool_name>",\n'
-    '        "description": "<What this action accomplishes>",\n'
-    '        "parameters": { ... }\n'
+    '        "description": "<Concise description of this action>",\n'
+    '        "parameters": { ... },\n'
+    '        "is_destructive": false\n'
     '      }\n'
     '    ]\n'
     '  }\n'
     "}\n"
     "```\n"
-    "Available tools include: create_journey(title, description), update_journey(journey_id, title, description), "
-    "delete_journey(journey_id), create_section(journey_id, title), update_section(section_id, title), "
-    "delete_section(section_id), create_topic(section_id, title), update_topic(topic_id, title), "
-    "complete_topic(topic_id), pending_topic(topic_id), delete_topic(topic_id), create_note(topic_id, content), "
-    "update_note(note_id, content), delete_note(note_id), get_journey_progress(journey_id), get_section_progress(section_id).\n"
-    "You can chain actions by referencing outputs from prior steps using '$<index>.id' (e.g., '$0.id' or '$prev.id').\n"
-    "Always provide a helpful message explaining what you planned alongside the JSON block."
+    "Available tools:\n"
+    "- create_journey(title, description)\n"
+    "- update_journey(journey_id, title, description)\n"
+    "- delete_journey(journey_id) [destructive]\n"
+    "- create_section(journey_id, title)\n"
+    "- update_section(section_id, title)\n"
+    "- delete_section(section_id) [destructive]\n"
+    "- create_topic(section_id, title)\n"
+    "- update_topic(topic_id, title)\n"
+    "- complete_topic(topic_id)\n"
+    "- pending_topic(topic_id)\n"
+    "- delete_topic(topic_id) [destructive]\n"
+    "- create_note(topic_id, content)\n"
+    "- update_note(note_id, content)\n"
+    "- delete_note(note_id) [destructive]\n"
+    "- get_journey_progress(journey_id)\n"
+    "- get_section_progress(section_id)\n\n"
+    "You can chain multi-step actions by referencing created IDs with '$<index>.id' (e.g. '$0.id', '$1.id', '$prev.id').\n"
+    "For learning roadmaps, create a comprehensive structure: 1 journey, multiple logical sections in learning order, "
+    "granular topics per section, and attach practical exercise notes to key topics."
 )
 
 
@@ -180,35 +209,94 @@ class ConversationService:
         return saved_user_msg, saved_assistant_msg, proposal
 
     def _extract_action_proposal(self, content: str) -> tuple[str, Optional[dict[str, Any]]]:
-        """Extract JSON action_proposal block from response content if present."""
-        # Search for ```json ... ``` or ``` ... ``` containing "action_proposal"
-        code_block_pattern = r"```(?:json)?\s*(\{\s*\"action_proposal\"[\s\S]*?\})\s*```"
+        """Extract action_proposal block from response content and return cleaned message text."""
+        # Check for action_proposal keyword
+        keyword = '"action_proposal"'
+        kw_pos = content.find(keyword)
+        if kw_pos == -1:
+            keyword = "'action_proposal'"
+            kw_pos = content.find(keyword)
+
+        if kw_pos != -1:
+            raw_json, json_start, json_end = self._find_balanced_json(content, kw_pos)
+            if raw_json:
+                try:
+                    parsed = json.loads(raw_json)
+                    if isinstance(parsed, dict) and "action_proposal" in parsed:
+                        proposal_obj = parsed["action_proposal"]
+
+                        # Determine boundaries to remove including markdown fences if wrapped
+                        remove_start = json_start
+                        remove_end = json_end
+
+                        # Expand backwards to include ```json or ```proposal or ```
+                        prefix = content[:remove_start]
+                        fence_match = re.search(r"```(?:json|proposal)?\s*$", prefix)
+                        if fence_match:
+                            remove_start = fence_match.start()
+
+                        # Expand forwards to include closing ```
+                        suffix = content[remove_end:]
+                        close_fence_match = re.match(r"^\s*```", suffix)
+                        if close_fence_match:
+                            remove_end = remove_end + close_fence_match.end()
+
+                        cleaned = (content[:remove_start] + content[remove_end:]).strip()
+                        # Extra cleanup: remove any leftover empty fences or json artifacts
+                        cleaned = re.sub(r"```(?:json|proposal)?\s*```", "", cleaned).strip()
+                        return cleaned, proposal_obj
+                except json.JSONDecodeError:
+                    pass
+
+        # Fallback to regex patterns if balanced finder was outside standard structure
+        code_block_pattern = r"```(?:json|proposal)?\s*(\{\s*[\"']action_proposal[\"'][\s\S]*?\})\s*```"
         match = re.search(code_block_pattern, content)
         if match:
             raw_json = match.group(1)
             try:
                 parsed = json.loads(raw_json)
                 if isinstance(parsed, dict) and "action_proposal" in parsed:
-                    # Clean out code block from text so user sees clear narrative message
                     cleaned = re.sub(code_block_pattern, "", content).strip()
                     return cleaned, parsed["action_proposal"]
             except json.JSONDecodeError:
                 pass
 
-        # Also search for standalone JSON object with action_proposal
-        raw_json_pattern = r"(\{\s*\"action_proposal\"\s*:\s*\{[\s\S]*?\}\s*\})"
-        match_raw = re.search(raw_json_pattern, content)
-        if match_raw:
-            raw_json = match_raw.group(1)
-            try:
-                parsed = json.loads(raw_json)
-                if isinstance(parsed, dict) and "action_proposal" in parsed:
-                    cleaned = re.sub(raw_json_pattern, "", content).strip()
-                    return cleaned, parsed["action_proposal"]
-            except json.JSONDecodeError:
-                pass
+        return content.strip(), None
 
-        return content, None
+    @staticmethod
+    def _find_balanced_json(text: str, start_index: int) -> tuple[Optional[str], int, int]:
+        """Find balanced JSON object containing start_index.
+        Returns (json_str, start_pos, end_pos) or (None, -1, -1)."""
+        brace_start = text.rfind("{", 0, start_index + 1)
+        if brace_start == -1:
+            brace_start = text.find("{", start_index)
+            if brace_start == -1:
+                return None, -1, -1
+
+        depth = 0
+        in_string = False
+        escape = False
+
+        for i in range(brace_start, len(text)):
+            char = text[i]
+            if escape:
+                escape = False
+                continue
+            if char == "\\":
+                if in_string:
+                    escape = True
+                continue
+            if char == '"':
+                in_string = not in_string
+                continue
+            if not in_string:
+                if char == "{":
+                    depth += 1
+                elif char == "}":
+                    depth -= 1
+                    if depth == 0:
+                        return text[brace_start : i + 1], brace_start, i + 1
+        return None, -1, -1
 
     def _verify_ownership(self, conversation_id: int, user_id: int) -> Conversation:
         """Ensure the conversation exists and belongs to the requested user."""

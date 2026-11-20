@@ -7,6 +7,7 @@ import { actionService } from '@/services/api/actions';
 import { Conversation, ConversationDetail, ConversationMessage } from '@/types/conversation';
 import { ActionProposal } from '@/types/action';
 import { ActionProposalCard } from '@/components/chat/ActionProposalCard';
+import { MarkdownRenderer } from '@/components/chat/MarkdownRenderer';
 import { ApiError } from '@/services/api/errors';
 
 const PROMPT_SUGGESTIONS = [
@@ -490,12 +491,12 @@ export default function ChatPage() {
                         className={`rounded-2xl px-4 py-3 text-xs leading-relaxed max-w-[85%] ${
                           isUser
                             ? 'bg-emerald-600 text-white shadow-xs font-medium'
-                            : 'bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700/60 shadow-xs'
+                            : 'bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200/90 dark:border-slate-800 shadow-xs'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-4 mb-1 text-[10px] opacity-75">
                           <span className="font-semibold uppercase tracking-wider">
-                            {isUser ? 'You' : 'Masar AI'}
+                            {isUser ? 'You' : 'Masar AI Mentor'}
                           </span>
                           <span>
                             {new Date(msg.created_at).toLocaleTimeString([], {
@@ -504,7 +505,15 @@ export default function ChatPage() {
                             })}
                           </span>
                         </div>
-                        <div className="whitespace-pre-wrap select-text">{msg.content}</div>
+                        {isUser ? (
+                          <div className="whitespace-pre-wrap select-text text-xs font-medium leading-relaxed">
+                            {msg.content}
+                          </div>
+                        ) : (
+                          <div className="select-text">
+                            <MarkdownRenderer content={msg.content} />
+                          </div>
+                        )}
                       </div>
 
                       {isUser && (
@@ -529,8 +538,40 @@ export default function ChatPage() {
                       proposal={proposal}
                       onApprove={handleApproveProposal}
                       onReject={handleRejectProposal}
+                      onRequestEdit={(suggestion) => {
+                        setInputContent(suggestion);
+                        setTimeout(() => textareaRef.current?.focus(), 50);
+                      }}
                     />
                   ))}
+                </div>
+              )}
+
+              {/* Contextual Suggested Quick Actions */}
+              {activeDetail && activeDetail.messages.length > 0 && !isSending && (
+                <div className="flex flex-wrap items-center gap-2 pt-2 pb-1">
+                  <span className="text-[11px] font-semibold text-slate-400">Mentor Follow-ups:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleSendMessage('What are the key architectural trade-offs and edge cases to consider?')}
+                    className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                  >
+                    Architectural trade-offs →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendMessage('Could you provide 3 hands-on practical exercises or mini-projects for this?')}
+                    className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                  >
+                    Hands-on exercises →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendMessage('Please structure this into an organized learning roadmap with sections and topics for Masar.')}
+                    className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                  >
+                    Generate roadmap proposal →
+                  </button>
                 </div>
               )}
 
@@ -542,7 +583,7 @@ export default function ChatPage() {
                   </div>
                   <div className="rounded-2xl px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-xs flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                    <span>Generating architectural response...</span>
+                    <span>Masar AI is analyzing requirements and structuring recommendations...</span>
                   </div>
                 </div>
               )}
