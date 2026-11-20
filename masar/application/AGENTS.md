@@ -22,6 +22,9 @@ masar/application/
 │   │   ├── password_hasher.py  # ABC for password hashing and verification
 │   │   ├── token_service.py    # ABC for JWT generation and verification
 │   │   └── __init__.py
+│   ├── ai/                     # AI provider abstractions
+│   │   ├── ai_provider.py      # ABC for complete() and chat() LLM operations
+│   │   └── __init__.py
 │   └── __init__.py
 ├── schemas/                    # Pydantic v2 DTOs for input validation & output serialization
 │   ├── journey.py              # JourneyCreate, JourneyUpdate, JourneyResponse
@@ -31,6 +34,7 @@ masar/application/
 │   ├── progress.py             # JourneyProgressSchema, SectionProgressSchema
 │   ├── user.py                 # UserCreate, UserLogin, UserResponse
 │   ├── token.py                # TokenResponse, TokenData
+│   ├── ai.py                   # ChatMessageSchema, CompletionRequestSchema, ChatRequestSchema, AIResponseSchema
 │   └── __init__.py
 ├── services/                   # Application Use Cases & Workflows
 │   ├── journey_service.py      # CRUD, filtering, and ownership verification for journeys
@@ -39,6 +43,7 @@ masar/application/
 │   ├── note_service.py         # Note CRUD and topic-parent association validation
 │   ├── progress_service.py     # Aggregated progress calculations across roadmaps
 │   ├── user_service.py         # User registration, authentication, JWT token issuance
+│   ├── ai_service.py           # AI prompt & chat orchestration and domain validation
 │   └── __init__.py
 ├── __init__.py                 # Top-level application re-exports
 └── AGENTS.md                   # This specification file

@@ -182,6 +182,32 @@ uvicorn masar.presentation.api.app:app --reload --port 8000
 
 The interactive API documentation is accessible at `http://localhost:8000/docs`.
 
+### 6. AI Integration Foundation
+
+Masar provides an extensible AI abstraction layer supporting LLM integrations. The foundation integrates with OpenRouter (OpenAI-compatible) and includes an offline mock provider for automated testing.
+
+#### Configuration (`.env`)
+
+Configure the following variables in your `.env` file:
+
+```env
+# AI Provider Configuration
+MASAR_AI_PROVIDER=openrouter               # Options: "openrouter", "mock"
+OPENROUTER_API_KEY=your-openrouter-api-key # Or OPENROUTER_API-KEY
+MASAR_AI_MODEL=nvidia/nemotron-3-ultra-550b-a55b:free
+MASAR_AI_BASE_URL=https://openrouter.ai/api/v1
+MASAR_AI_TIMEOUT_SECONDS=30.0
+MASAR_AI_TEMPERATURE=0.7
+```
+
+#### Architecture Components:
+- **Domain Layer (`masar.domain.models.ai`, `masar.domain.exceptions.ai`)**: Core dataclasses (`ChatMessage`, `AIUsage`, `AIResponse`) and structured domain exceptions (`AIAuthenticationError`, `AIRateLimitError`, `AITimeoutError`, `AIProviderError`, `AIConfigurationError`).
+- **Application Layer (`masar.application.interfaces.ai`, `masar.application.services.ai_service`)**: `AIProvider` interface contract and `AIService` orchestrator validating prompts and message roles.
+- **Infrastructure Layer (`masar.infrastructure.ai`)**:
+  - `OpenRouterProvider`: Production-grade HTTP client with error mapping and retry/timeout handling.
+  - `MockAIProvider`: Zero-network test provider supporting queued mock responses, call recording, and error injection.
+
+
 ---
 
 ## Frontend Setup (Next.js & TypeScript)

@@ -7,6 +7,12 @@ from fastapi.responses import JSONResponse
 from masar.config.settings import Settings, get_settings
 from masar.domain.exceptions import (
     AccessDeniedError,
+    AIAuthenticationError,
+    AIConfigurationError,
+    AIError,
+    AIProviderError,
+    AIRateLimitError,
+    AITimeoutError,
     AuthenticationError,
     EntityNotFoundError,
     StorageError,
@@ -87,12 +93,55 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             content={"detail": str(exc)},
         )
 
+    @app.exception_handler(AIAuthenticationError)
+    async def ai_auth_error_handler(request: Request, exc: AIAuthenticationError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(AIRateLimitError)
+    async def ai_rate_limit_handler(request: Request, exc: AIRateLimitError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(AITimeoutError)
+    async def ai_timeout_handler(request: Request, exc: AITimeoutError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(AIConfigurationError)
+    async def ai_configuration_handler(request: Request, exc: AIConfigurationError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(AIProviderError)
+    async def ai_provider_error_handler(request: Request, exc: AIProviderError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(AIError)
+    async def ai_error_handler(request: Request, exc: AIError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"detail": str(exc)},
+        )
+
     # Attach settings and application services to app state
-    from masar.container import build_container, build_user_service
+    from masar.container import build_ai_service, build_container, build_user_service
 
     app.state.settings = active_settings
     app.state.services = build_container(settings=active_settings)
     app.state.user_service = build_user_service(settings=active_settings)
+    app.state.ai_service = build_ai_service(settings=active_settings)
 
     # Include routers
     app.include_router(root_router)

@@ -17,6 +17,7 @@ masar/domain/
 │   ├── note.py                 # Note entity (developer observations/insights attached to a topic)
 │   ├── progress.py             # Progress value object (calculation results, percentages, completion status)
 │   ├── user.py                 # User entity (account identity, email, password hash)
+│   ├── ai.py                   # AI value objects (ChatMessage, AIUsage, AIResponse)
 │   └── __init__.py             # Re-exports of all domain models
 ├── exceptions/                 # Granular domain exception hierarchy
 │   ├── base.py                 # DomainError base class and semantic classifications
@@ -25,6 +26,7 @@ masar/domain/
 │   ├── topic.py                # TopicNotFound, InvalidTopicStatus, etc.
 │   ├── note.py                 # NoteNotFound, NoteContentRequired, etc.
 │   ├── user.py                 # UserNotFound, UserAlreadyExists, InvalidCredentials, etc.
+│   ├── ai.py                   # AIError, AIAuthenticationError, AIRateLimitError, AITimeoutError, etc.
 │   ├── storage.py              # Domain-level persistence failure exceptions
 │   └── __init__.py             # Clean re-exports of all domain exceptions
 ├── types.py                    # Domain enums and type aliases (e.g., TopicStatus)

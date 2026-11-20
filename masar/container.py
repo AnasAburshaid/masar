@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from masar.application.interfaces.ai import AIProvider
 from masar.application.interfaces.repositories import (
     JourneyRepository,
     NoteRepository,
@@ -10,6 +11,7 @@ from masar.application.interfaces.repositories import (
     UserRepository,
 )
 from masar.application.services import (
+    AIService,
     JourneyService,
     NoteService,
     ProgressService,
@@ -18,6 +20,7 @@ from masar.application.services import (
     UserService,
 )
 from masar.config.settings import Settings, get_settings
+from masar.infrastructure.ai import MockAIProvider, OpenRouterProvider
 from masar.infrastructure.repositories.in_memory import (
     InMemoryJourneyRepository,
     InMemoryNoteRepository,
@@ -192,3 +195,49 @@ def build_user_service(
         password_hasher=hasher,
         token_service=token_service,
     )
+
+
+def build_ai_service(
+    provider_type: str | None = None,
+    api_key: str | None = None,
+    model: str | None = None,
+    base_url: str | None = None,
+    timeout_seconds: float | None = None,
+    settings: Settings | None = None,
+    provider: AIProvider | None = None,
+) -> AIService:
+    """Instantiate and wire up AIProvider and AIService."""
+    if provider is not None:
+        return AIService(provider=provider)
+
+    active_settings = settings or get_settings()
+    resolved_provider = (
+        provider_type if provider_type is not None else active_settings.ai_provider
+    ).lower()
+
+    resolved_model = model if model is not None else active_settings.ai_model
+    resolved_timeout = (
+        timeout_seconds if timeout_seconds is not None else active_settings.ai_timeout_seconds
+    )
+
+    ai_provider: AIProvider
+    if resolved_provider == "openrouter":
+        resolved_key = api_key if api_key is not None else active_settings.ai_api_key
+        resolved_base_url = (
+            base_url if base_url is not None else active_settings.ai_base_url
+        )
+        ai_provider = OpenRouterProvider(
+            api_key=resolved_key,
+            base_url=resolved_base_url,
+            default_model=resolved_model,
+            timeout_seconds=resolved_timeout,
+            default_temperature=active_settings.ai_temperature,
+            default_max_tokens=active_settings.ai_max_tokens,
+        )
+    elif resolved_provider == "mock":
+        ai_provider = MockAIProvider(default_model=resolved_model)
+    else:
+        raise ValueError(f"Unknown AI provider: {resolved_provider}")
+
+    return AIService(ai_provider=ai_provider)
+

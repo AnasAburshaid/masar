@@ -1,5 +1,13 @@
 """Domain exceptions package."""
 
+from masar.domain.exceptions.ai import (
+    AIAuthenticationError,
+    AIConfigurationError,
+    AIError,
+    AIProviderError,
+    AIRateLimitError,
+    AITimeoutError,
+)
 from masar.domain.exceptions.base import (
     AccessDeniedError,
     DomainError,
@@ -27,6 +35,12 @@ from masar.domain.exceptions.user import (
 )
 
 __all__ = [
+    "AIAuthenticationError",
+    "AIConfigurationError",
+    "AIError",
+    "AIProviderError",
+    "AIRateLimitError",
+    "AITimeoutError",
     "AccessDeniedError",
     "AuthenticationError",
     "CorruptedStorageError",

@@ -31,6 +31,10 @@ masar/infrastructure/
 │   ├── password.py             # PBKDF2PasswordHasher (PBKDF2-HMAC-SHA256 with per-user salt)
 │   ├── jwt_token.py            # PyJWTTokenService (stateless signed tokens with HS256)
 │   └── __init__.py
+├── ai/                         # Concrete AI provider implementations
+│   ├── openrouter_provider.py  # OpenRouter / OpenAI-compatible HTTP provider with httpx
+│   ├── mock_provider.py        # In-memory MockAIProvider for offline testing and verification
+│   └── __init__.py
 ├── storage/                    # File-system storage engines
 │   ├── json_storage.py         # Thread-safe JSON persistence with file locks
 │   └── __init__.py
@@ -80,6 +84,7 @@ masar/infrastructure/
 - **SQLite / PostgreSQL:** Relational database backends supported via standard connection strings.
 - **PyJWT:** JSON Web Token encoding, decoding, and signature verification.
 - **`hashlib` & `secrets`:** Salted PBKDF2 cryptography.
+- **`httpx`:** Synchronous HTTP client for REST API communication with OpenRouter with mock transport support for unit testing.
 
 ---
 
