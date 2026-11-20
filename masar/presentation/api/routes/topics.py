@@ -9,7 +9,8 @@ from masar.application.schemas.topic import (
     TopicUpdateSchema,
 )
 from masar.application.services import TopicService
-from masar.presentation.api.dependencies import get_topic_service
+from masar.domain.models import User
+from masar.presentation.api.dependencies import get_current_user, get_topic_service
 
 router = APIRouter(tags=["Topics"])
 
@@ -23,14 +24,16 @@ router = APIRouter(tags=["Topics"])
 def create_topic(
     payload: TopicCreateSchema,
     topic_service: Annotated[TopicService, Depends(get_topic_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> TopicResponseSchema:
-    """Create a new topic inside an existing section."""
+    """Create a new topic inside an existing section owned by user."""
     topic = topic_service.create_topic(
         section_id=payload.section_id,
         title=payload.title,
+        user_id=current_user.id,
     )
     if payload.is_completed:
-        topic = topic_service.set_topic_completion(topic.id or 0, True)
+        topic = topic_service.set_topic_completion(topic.id or 0, True, user_id=current_user.id)
     return TopicResponseSchema.model_validate(topic)
 
 
@@ -43,9 +46,10 @@ def create_topic(
 def get_topic(
     topic_id: Annotated[int, Path(..., gt=0, description="The positive ID of the topic to retrieve")],
     topic_service: Annotated[TopicService, Depends(get_topic_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> TopicResponseSchema:
     """Retrieve details of a single topic."""
-    topic = topic_service.get_topic(topic_id)
+    topic = topic_service.get_topic(topic_id, user_id=current_user.id)
     return TopicResponseSchema.model_validate(topic)
 
 
@@ -58,9 +62,10 @@ def get_topic(
 def list_topics_by_section_path(
     section_id: Annotated[int, Path(..., gt=0, description="Section ID whose topics to list")],
     topic_service: Annotated[TopicService, Depends(get_topic_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> list[TopicResponseSchema]:
     """Retrieve all topics belonging to a specific section."""
-    topics = topic_service.list_topics(section_id)
+    topics = topic_service.list_topics(section_id, user_id=current_user.id)
     return [TopicResponseSchema.model_validate(t) for t in topics]
 
 
@@ -73,9 +78,10 @@ def list_topics_by_section_path(
 def list_topics_by_section_query(
     section_id: Annotated[int, Query(..., gt=0, description="Section ID whose topics to list")],
     topic_service: Annotated[TopicService, Depends(get_topic_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> list[TopicResponseSchema]:
     """Retrieve all topics belonging to a specific section."""
-    topics = topic_service.list_topics(section_id)
+    topics = topic_service.list_topics(section_id, user_id=current_user.id)
     return [TopicResponseSchema.model_validate(t) for t in topics]
 
 
@@ -95,13 +101,14 @@ def update_topic(
     topic_id: Annotated[int, Path(..., gt=0, description="The positive ID of the topic to update")],
     payload: TopicUpdateSchema,
     topic_service: Annotated[TopicService, Depends(get_topic_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> TopicResponseSchema:
     """Update topic title and/or completion status."""
-    topic = topic_service.get_topic(topic_id)
+    topic = topic_service.get_topic(topic_id, user_id=current_user.id)
     if payload.title is not None:
-        topic = topic_service.rename_topic(topic_id, payload.title)
+        topic = topic_service.rename_topic(topic_id, payload.title, user_id=current_user.id)
     if payload.is_completed is not None:
-        topic = topic_service.set_topic_completion(topic_id, payload.is_completed)
+        topic = topic_service.set_topic_completion(topic_id, payload.is_completed, user_id=current_user.id)
     return TopicResponseSchema.model_validate(topic)
 
 
@@ -114,9 +121,10 @@ def update_topic(
 def mark_topic_completed(
     topic_id: Annotated[int, Path(..., gt=0, description="The positive ID of the topic to complete")],
     topic_service: Annotated[TopicService, Depends(get_topic_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> TopicResponseSchema:
     """Mark a topic as completed."""
-    topic = topic_service.set_topic_completion(topic_id, True)
+    topic = topic_service.set_topic_completion(topic_id, True, user_id=current_user.id)
     return TopicResponseSchema.model_validate(topic)
 
 
@@ -129,9 +137,10 @@ def mark_topic_completed(
 def mark_topic_pending(
     topic_id: Annotated[int, Path(..., gt=0, description="The positive ID of the topic to mark pending")],
     topic_service: Annotated[TopicService, Depends(get_topic_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> TopicResponseSchema:
     """Mark a topic as pending (incomplete)."""
-    topic = topic_service.set_topic_completion(topic_id, False)
+    topic = topic_service.set_topic_completion(topic_id, False, user_id=current_user.id)
     return TopicResponseSchema.model_validate(topic)
 
 
@@ -143,6 +152,7 @@ def mark_topic_pending(
 def delete_topic(
     topic_id: Annotated[int, Path(..., gt=0, description="The positive ID of the topic to delete")],
     topic_service: Annotated[TopicService, Depends(get_topic_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> None:
     """Delete a topic and cascade delete all its attached notes."""
-    topic_service.delete_topic(topic_id)
+    topic_service.delete_topic(topic_id, user_id=current_user.id)

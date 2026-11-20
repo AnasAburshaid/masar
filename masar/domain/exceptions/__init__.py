@@ -1,6 +1,7 @@
 """Domain exceptions package."""
 
 from masar.domain.exceptions.base import (
+    AccessDeniedError,
     DomainError,
     EmptyFieldError,
     EntityNotFoundError,
@@ -26,6 +27,7 @@ from masar.domain.exceptions.user import (
 )
 
 __all__ = [
+    "AccessDeniedError",
     "AuthenticationError",
     "CorruptedStorageError",
     "DomainError",

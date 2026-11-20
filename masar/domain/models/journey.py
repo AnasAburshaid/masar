@@ -18,6 +18,7 @@ class Journey:
     title: str
     description: str = ""
     id: int | None = None
+    user_id: int | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     MAX_TITLE_LENGTH: int = 100
@@ -30,6 +31,8 @@ class Journey:
         """Validate journey business rules."""
         if self.id is not None and self.id <= 0:
             raise InvalidIdError("Journey ID must be a positive integer.")
+        if self.user_id is not None and self.user_id <= 0:
+            raise InvalidIdError("User ID must be a positive integer.")
         if not self.title or not self.title.strip():
             raise EmptyFieldError("Journey title cannot be empty.")
         self.title = self.title.strip()

@@ -21,6 +21,10 @@ class JourneyRepository(ABC):
         """Retrieve all journeys."""
 
     @abstractmethod
+    def get_by_user_id(self, user_id: int) -> list[Journey]:
+        """Retrieve all journeys belonging to a specific user."""
+
+    @abstractmethod
     def update(self, journey: Journey) -> Journey:
         """Update an existing journey."""
 

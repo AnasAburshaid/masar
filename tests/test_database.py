@@ -255,6 +255,7 @@ class TestContainerAndApiWithDatabase(unittest.TestCase):
         self.settings = Settings(
             storage_type="database",
             database_url=self.db_url,
+            environment="testing",
         )
 
     def test_build_container_database(self) -> None:

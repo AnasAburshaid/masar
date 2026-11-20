@@ -52,6 +52,7 @@ class JourneyResponseSchema(JourneyBaseSchema):
     )
 
     id: int = Field(..., gt=0, description="Positive entity identifier")
+    user_id: int | None = Field(default=None, description="Owner user identifier")
     title: str = Field(..., min_length=1, max_length=100)
     description: str = Field(default="")
     created_at: datetime | str = Field(..., description="Creation timestamp")

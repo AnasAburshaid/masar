@@ -23,3 +23,7 @@ class InvalidIdError(ValidationError):
 
 class EntityNotFoundError(DomainError):
     """Raised when an entity is not found."""
+
+
+class AccessDeniedError(DomainError):
+    """Raised when an authenticated user attempts to access a resource owned by another user."""

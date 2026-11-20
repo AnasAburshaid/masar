@@ -14,6 +14,7 @@ class StorageJourneyRecord(StorageRecordBase):
     """Schema validating a persisted Journey record."""
 
     id: int = Field(..., gt=0, description="Unique positive journey ID")
+    user_id: int | None = Field(default=None, description="Optional owner user ID")
     title: str = Field(..., min_length=1, max_length=200)
     description: str = Field(default="", max_length=1000)
     created_at: str | None = Field(default=None)

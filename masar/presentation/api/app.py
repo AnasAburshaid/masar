@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from masar.config.settings import Settings, get_settings
 from masar.domain.exceptions import (
+    AccessDeniedError,
     AuthenticationError,
     EntityNotFoundError,
     StorageError,
@@ -68,6 +69,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={"detail": str(exc)},
             headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    @app.exception_handler(AccessDeniedError)
+    async def access_denied_handler(request: Request, exc: AccessDeniedError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={"detail": str(exc)},
         )
 
     # Attach settings and application services to app state
