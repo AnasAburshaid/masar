@@ -22,6 +22,7 @@ DEFAULT_SCHEMA: dict[str, list[dict[str, Any]]] = {
     "topics": [],
     "notes": [],
     "documents": [],
+    "profile_items": [],
 }
 
 

@@ -16,13 +16,14 @@ from masar.domain.exceptions import (
     SectionNotFoundError,
     TopicNotFoundError,
 )
-from masar.domain.models import Document, Journey, Note, Section, Topic
-from masar.infrastructure.database.models import DocumentModel, JourneyModel, NoteModel, SectionModel, TopicModel
+from masar.domain.models import Document, Journey, Note, ProfileItem, Section, Topic
+from masar.infrastructure.database.models import DocumentModel, JourneyModel, NoteModel, SectionModel, TopicModel, UserModel
 from masar.infrastructure.database.session import Base, get_engine, normalize_database_url
 from masar.infrastructure.repositories.database import (
     SqlDocumentRepository,
     SqlJourneyRepository,
     SqlNoteRepository,
+    SqlProfileRepository,
     SqlSectionRepository,
     SqlTopicRepository,
 )
@@ -58,6 +59,7 @@ class TestSqlRepositories(unittest.TestCase):
         self.session: Session = self.session_factory()
 
         self.journey_repo = SqlJourneyRepository(self.session)
+        self.profile_repo = SqlProfileRepository(self.session)
         self.section_repo = SqlSectionRepository(self.session)
         self.topic_repo = SqlTopicRepository(self.session)
         self.note_repo = SqlNoteRepository(self.session)
@@ -280,6 +282,49 @@ class TestSqlRepositories(unittest.TestCase):
         self.assertTrue(self.doc_repo.delete(saved.id or 1))
         self.assertIsNone(self.doc_repo.get_by_id(saved.id or 1))
         self.assertFalse(self.doc_repo.delete(9999))
+
+    def test_profile_repository_crud(self) -> None:
+        user = UserModel(email="alice@example.com", hashed_password="hash")
+        self.session.add(user)
+        self.session.commit()
+        user_id = user.id
+
+        item = ProfileItem(
+            user_id=user_id,
+            name="FastAPI",
+            category="technology",
+            level="intermediate",
+            is_confirmed=True,
+            source_type="manual",
+        )
+        saved = self.profile_repo.add_item(item)
+        self.assertIsNotNone(saved.id)
+        assert saved.id is not None
+
+        # Get item
+        fetched = self.profile_repo.get_item(saved.id)
+        self.assertIsNotNone(fetched)
+        assert fetched is not None
+        self.assertEqual(fetched.name, "FastAPI")
+
+        # Update item
+        fetched.level = "advanced"
+        updated = self.profile_repo.update_item(fetched)
+        self.assertEqual(updated.level, "advanced")
+
+        # Get profile
+        profile = self.profile_repo.get_profile(user_id)
+        self.assertEqual(len(profile.items), 1)
+
+        # Update bio
+        self.profile_repo.update_bio(user_id, "Senior Backend Dev")
+        profile = self.profile_repo.get_profile(user_id)
+        self.assertEqual(profile.bio, "Senior Backend Dev")
+
+        # Delete item
+        self.assertTrue(self.profile_repo.delete_item(saved.id))
+        self.assertIsNone(self.profile_repo.get_item(saved.id))
+        self.assertFalse(self.profile_repo.delete_item(9999))
 
 
 class TestContainerAndApiWithDatabase(unittest.TestCase):

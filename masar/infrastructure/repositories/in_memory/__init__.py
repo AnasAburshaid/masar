@@ -15,6 +15,9 @@ from masar.infrastructure.repositories.in_memory.journey_repository import (
 from masar.infrastructure.repositories.in_memory.note_repository import (
     InMemoryNoteRepository,
 )
+from masar.infrastructure.repositories.in_memory.profile_repository import (
+    InMemoryProfileRepository,
+)
 from masar.infrastructure.repositories.in_memory.section_repository import (
     InMemorySectionRepository,
 )
@@ -31,6 +34,7 @@ __all__ = [
     "InMemoryDocumentRepository",
     "InMemoryJourneyRepository",
     "InMemoryNoteRepository",
+    "InMemoryProfileRepository",
     "InMemorySectionRepository",
     "InMemoryTopicRepository",
     "InMemoryUserRepository",

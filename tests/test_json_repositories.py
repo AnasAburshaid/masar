@@ -11,11 +11,12 @@ from masar.domain.exceptions import (
     TopicNotFoundError,
     UserAlreadyExistsError,
 )
-from masar.domain.models import Document, Journey, Note, Section, Topic, User
+from masar.domain.models import Document, Journey, Note, ProfileItem, Section, Topic, User
 from masar.infrastructure.repositories.json import (
     JsonDocumentRepository,
     JsonJourneyRepository,
     JsonNoteRepository,
+    JsonProfileRepository,
     JsonSectionRepository,
     JsonTopicRepository,
     JsonUserRepository,
@@ -36,6 +37,7 @@ class TestJsonRepositories(unittest.TestCase):
         self.note_repo = JsonNoteRepository(self.storage)
         self.user_repo = JsonUserRepository(self.storage)
         self.doc_repo = JsonDocumentRepository(self.storage)
+        self.profile_repo = JsonProfileRepository(self.storage)
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
@@ -75,45 +77,6 @@ class TestJsonRepositories(unittest.TestCase):
         self.assertTrue(restarted_repo.delete(1))
         self.assertIsNone(restarted_repo.get_by_id(1))
         self.assertFalse(restarted_repo.delete(999))
-
-    def test_document_repository_crud_and_persistence(self) -> None:
-        doc = Document(
-            user_id=1,
-            filename="syllabus.md",
-            file_type="markdown",
-            file_size_bytes=1024,
-            extracted_text="# Syllabus\nContent",
-        )
-        added = self.doc_repo.add(doc)
-        self.assertEqual(added.id, 1)
-
-        # Get by id
-        found = self.doc_repo.get_by_id(1)
-        self.assertIsNotNone(found)
-        self.assertEqual(found.filename, "syllabus.md")
-
-        # List by user id
-        user1_docs = self.doc_repo.list_by_user_id(1)
-        self.assertEqual(len(user1_docs), 1)
-        user2_docs = self.doc_repo.list_by_user_id(2)
-        self.assertEqual(len(user2_docs), 0)
-
-        # Update
-        found.update_summary("AI Summary")
-        updated = self.doc_repo.update(found)
-        self.assertEqual(updated.summary, "AI Summary")
-
-        # Persistence across restart
-        new_storage = JsonStorage(self.file_path)
-        restarted_repo = JsonDocumentRepository(new_storage)
-        survived = restarted_repo.get_by_id(1)
-        self.assertIsNotNone(survived)
-        self.assertEqual(survived.summary, "AI Summary")
-
-        # Delete
-        self.assertTrue(restarted_repo.delete(1))
-        self.assertIsNone(restarted_repo.get_by_id(1))
-
 
         # Update nonexistent raises
         with self.assertRaises(JourneyNotFoundError):
@@ -274,6 +237,51 @@ class TestJsonRepositories(unittest.TestCase):
         # Delete
         self.assertTrue(restarted_repo.delete(1))
         self.assertIsNone(restarted_repo.get_by_id(1))
+
+    def test_profile_repository_crud_and_persistence(self) -> None:
+        user = self.user_repo.add(User(email="alice@example.com", hashed_password="hash"))
+        user_id = user.id or 1
+
+        item = ProfileItem(
+            user_id=user_id,
+            name="TypeScript",
+            category="language",
+            level="intermediate",
+            is_confirmed=True,
+            source_type="manual",
+        )
+        added = self.profile_repo.add_item(item)
+        self.assertEqual(added.id, 1)
+
+        # Get item
+        fetched = self.profile_repo.get_item(1)
+        self.assertIsNotNone(fetched)
+        assert fetched is not None
+        self.assertEqual(fetched.name, "TypeScript")
+
+        # Update item
+        fetched.level = "advanced"
+        updated = self.profile_repo.update_item(fetched)
+        self.assertEqual(updated.level, "advanced")
+
+        # Update bio
+        self.profile_repo.update_bio(user_id, "Full-Stack Dev")
+        profile = self.profile_repo.get_profile(user_id)
+        self.assertEqual(profile.bio, "Full-Stack Dev")
+        self.assertEqual(len(profile.items), 1)
+
+        # Persistence across restart
+        new_storage = JsonStorage(self.file_path)
+        restarted_repo = JsonProfileRepository(new_storage)
+        survived_profile = restarted_repo.get_profile(user_id)
+        self.assertEqual(survived_profile.bio, "Full-Stack Dev")
+        self.assertEqual(len(survived_profile.items), 1)
+        self.assertEqual(survived_profile.items[0].level, "advanced")
+
+        # Delete
+        self.assertTrue(restarted_repo.delete_item(1))
+        self.assertIsNone(restarted_repo.get_item(1))
+        self.assertFalse(restarted_repo.delete_item(9999))
 
 
 

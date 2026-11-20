@@ -31,6 +31,7 @@ class TestJsonStorage(unittest.TestCase):
                 "topics": [],
                 "notes": [],
                 "documents": [],
+                "profile_items": [],
             },
         )
         self.assertFalse(self.file_path.exists())
@@ -43,6 +44,7 @@ class TestJsonStorage(unittest.TestCase):
             "topics": [{"id": 1, "section_id": 1, "title": "Variables", "is_completed": False}],
             "notes": [{"id": 1, "topic_id": 1, "content": "Note text", "created_at": "2026-11-18T20:00:00+00:00", "updated_at": None}],
             "documents": [],
+            "profile_items": [],
         }
         self.storage.save(sample_data)
         self.assertTrue(self.file_path.exists())

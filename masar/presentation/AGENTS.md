@@ -19,6 +19,7 @@ masar/presentation/
 │   │   ├── notes.py            # /notes & /topics/{topic_id}/notes
 │   │   ├── conversations.py    # /conversations (CRUD, multi-turn /messages, and action proposals /approve & /reject)
 │   │   ├── documents.py        # /documents (/upload, list, detail, delete, /summarize)
+│   │   ├── profile.py          # /profile (GET profile, PUT bio, CRUD /items, /confirm, /extract)
 │   │   ├── progress.py         # /journeys/{journey_id}/progress & /sections/{id}/progress
 │   │   ├── root.py             # / (API metadata) & /health (health check)
 │   │   └── __init__.py

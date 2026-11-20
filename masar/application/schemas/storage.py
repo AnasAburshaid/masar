@@ -75,6 +75,21 @@ class StorageDocumentRecord(StorageRecordBase):
     created_at: str | None = Field(default=None)
 
 
+class StorageProfileItemRecord(StorageRecordBase):
+    """Schema validating a persisted ProfileItem record."""
+
+    id: int = Field(..., gt=0, description="Unique positive profile item ID")
+    user_id: int = Field(..., gt=0, description="Owner user ID")
+    category: str = Field(..., min_length=1, max_length=50)
+    name: str = Field(..., min_length=1, max_length=200)
+    level: str | None = Field(default=None)
+    is_confirmed: bool = Field(default=False)
+    source_type: str = Field(default="manual")
+    source_id: int | None = Field(default=None)
+    created_at: str | None = Field(default=None)
+    updated_at: str | None = Field(default=None)
+
+
 class StorageDataSchema(BaseModel):
     """Schema validating the full top-level JSON storage structure."""
 
@@ -86,6 +101,8 @@ class StorageDataSchema(BaseModel):
     topics: list[StorageTopicRecord] = Field(default_factory=list)
     notes: list[StorageNoteRecord] = Field(default_factory=list)
     documents: list[StorageDocumentRecord] = Field(default_factory=list)
+    profile_items: list[StorageProfileItemRecord] = Field(default_factory=list)
+
 
 
 
