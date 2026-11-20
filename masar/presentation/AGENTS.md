@@ -19,6 +19,8 @@ masar/presentation/
 │   │   ├── notes.py            # /notes & /topics/{topic_id}/notes
 │   │   ├── conversations.py    # /conversations (CRUD, multi-turn /messages, and action proposals /approve & /reject)
 │   │   ├── documents.py        # /documents (/upload, list, detail, delete, /summarize)
+│   │   ├── profile.py          # /profile (GET profile, PUT bio, CRUD /items, /confirm, /extract)
+│   │   ├── recommendations.py  # /recommendations (adaptive suggestions & knowledge gaps, /improve/{journey_id})
 │   │   ├── progress.py         # /journeys/{journey_id}/progress & /sections/{id}/progress
 │   │   ├── root.py             # / (API metadata) & /health (health check)
 │   │   └── __init__.py
@@ -43,7 +45,7 @@ masar/presentation/
 3. **Centralized Exception Handling:**
    - Handlers in `app.py` catch domain exceptions and map them to standard HTTP status codes:
      - `EntityNotFoundError` / `ActionProposalNotFoundError` ➔ `404 Not Found`
-     - `ValidationError` / `InvalidActionParametersError` / `ActionProposalAlreadyResolvedError` / `ActionExecutionError` / `UnknownToolError` ➔ `400 Bad Request` / `422 Unprocessable Entity`
+     - `ValidationError` / `InvalidActionParametersError` / `ActionProposalAlreadyResolvedError` / `ActionExecutionError` / `UnknownToolError` / `RecommendationError` ➔ `400 Bad Request` / `422 Unprocessable Entity`
      - `UnauthorizedError` / `AuthenticationError` / `AIAuthenticationError` ➔ `401 Unauthorized`
      - `ForbiddenError` / `AccessDeniedError` / `ActionProposalAccessDeniedError` ➔ `403 Forbidden`
      - `ConflictError` / `UserAlreadyExistsError` ➔ `409 Conflict`

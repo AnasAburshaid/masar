@@ -6,7 +6,9 @@ from masar.application.services.conversation_service import ConversationService
 from masar.application.services.document_service import DocumentService
 from masar.application.services.journey_service import JourneyService
 from masar.application.services.note_service import NoteService
+from masar.application.services.profile_service import ProfileService
 from masar.application.services.progress_service import ProgressService
+from masar.application.services.recommendation_service import RecommendationService
 from masar.application.services.section_service import SectionService
 from masar.application.services.tool_registry import ServicesBundle, ToolDefinition, ToolRegistry
 from masar.application.services.topic_service import TopicService
@@ -19,7 +21,9 @@ __all__ = [
     "DocumentService",
     "JourneyService",
     "NoteService",
+    "ProfileService",
     "ProgressService",
+    "RecommendationService",
     "SectionService",
     "ServicesBundle",
     "ToolDefinition",

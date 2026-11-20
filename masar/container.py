@@ -9,6 +9,7 @@ from masar.application.interfaces.repositories import (
     DocumentRepository,
     JourneyRepository,
     NoteRepository,
+    ProfileRepository,
     SectionRepository,
     TopicRepository,
     UserRepository,
@@ -20,7 +21,9 @@ from masar.application.services import (
     DocumentService,
     JourneyService,
     NoteService,
+    ProfileService,
     ProgressService,
+    RecommendationService,
     SectionService,
     ServicesBundle,
     ToolRegistry,
@@ -338,6 +341,7 @@ def build_conversation_service(
     action_service: ActionService | None = None,
     services_bundle: ServicesBundle | None = None,
     document_repository: DocumentRepository | None = None,
+    profile_repository: ProfileRepository | None = None,
 ) -> ConversationService:
     """Instantiate and wire up ConversationRepository, AIService, ActionService, ServicesBundle, DocumentRepository, and ConversationService."""
     active_settings = settings or get_settings()
@@ -412,12 +416,46 @@ def build_conversation_service(
 
             doc_repo = InMemoryDocumentRepository()
 
+    prof_repo: ProfileRepository | None = profile_repository
+    if prof_repo is None:
+        if resolved_storage in ("database", "postgres"):
+            from masar.infrastructure.database.session import Base, get_engine, get_session_factory
+            from masar.infrastructure.repositories.database.profile_repository import (
+                SqlProfileRepository,
+            )
+
+            resolved_db_url = (
+                database_url if database_url is not None else active_settings.database_url
+            )
+            engine = get_engine(resolved_db_url)
+            Base.metadata.create_all(bind=engine)
+            session_factory = get_session_factory(resolved_db_url)
+            db_session = session_factory()
+            prof_repo = SqlProfileRepository(db_session)
+        elif resolved_storage == "json":
+            from masar.infrastructure.repositories.json.profile_repository import (
+                JsonProfileRepository,
+            )
+
+            resolved_data_file = (
+                data_file if data_file is not None else active_settings.data_file
+            )
+            storage = JsonStorage(resolved_data_file)
+            prof_repo = JsonProfileRepository(storage)
+        elif resolved_storage == "in_memory":
+            from masar.infrastructure.repositories.in_memory.profile_repository import (
+                InMemoryProfileRepository,
+            )
+
+            prof_repo = InMemoryProfileRepository()
+
     return ConversationService(
         conversation_repository=conv_repo,
         ai_service=resolved_ai,
         action_service=resolved_action_service,
         services_bundle=services_bundle,
         document_repository=doc_repo,
+        profile_repository=prof_repo,
     )
 
 
@@ -481,6 +519,130 @@ def build_document_service(
         document_repository=doc_repo,
         ai_service=resolved_ai,
     )
+
+
+def build_profile_service(
+    storage_type: str | None = None,
+    data_file: str | Path | None = None,
+    database_url: str | None = None,
+    settings: Settings | None = None,
+    ai_service: AIService | None = None,
+    profile_repository: ProfileRepository | None = None,
+    document_repository: DocumentRepository | None = None,
+) -> ProfileService:
+    """Instantiate and wire up ProfileRepository, AIService, DocumentRepository, and ProfileService."""
+    active_settings = settings or get_settings()
+    resolved_ai = ai_service or build_ai_service(settings=active_settings)
+
+    resolved_storage = (
+        storage_type if storage_type is not None else active_settings.storage_type
+    )
+
+    prof_repo: ProfileRepository
+    if profile_repository is not None:
+        prof_repo = profile_repository
+    elif resolved_storage in ("database", "postgres"):
+        from masar.infrastructure.database.session import Base, get_engine, get_session_factory
+        from masar.infrastructure.repositories.database.profile_repository import (
+            SqlProfileRepository,
+        )
+
+        resolved_db_url = (
+            database_url if database_url is not None else active_settings.database_url
+        )
+        engine = get_engine(resolved_db_url)
+        Base.metadata.create_all(bind=engine)
+        session_factory = get_session_factory(resolved_db_url)
+        db_session = session_factory()
+        prof_repo = SqlProfileRepository(db_session)
+    elif resolved_storage == "json":
+        from masar.infrastructure.repositories.json.profile_repository import (
+            JsonProfileRepository,
+        )
+
+        resolved_data_file = (
+            data_file if data_file is not None else active_settings.data_file
+        )
+        storage = JsonStorage(resolved_data_file)
+        prof_repo = JsonProfileRepository(storage)
+    elif resolved_storage == "in_memory":
+        from masar.infrastructure.repositories.in_memory.profile_repository import (
+            InMemoryProfileRepository,
+        )
+
+        prof_repo = InMemoryProfileRepository()
+    else:
+        raise ValueError(f"Unknown storage type: {resolved_storage}")
+
+    doc_repo: DocumentRepository | None = document_repository
+    if doc_repo is None:
+        doc_service = build_document_service(
+            storage_type=storage_type,
+            data_file=data_file,
+            database_url=database_url,
+            settings=active_settings,
+            ai_service=resolved_ai,
+        )
+        doc_repo = doc_service._repo
+
+    return ProfileService(
+        profile_repository=prof_repo,
+        ai_service=resolved_ai,
+        document_repository=doc_repo,
+    )
+
+
+def build_recommendation_service(
+    storage_type: str | None = None,
+    data_file: str | Path | None = None,
+    database_url: str | None = None,
+    settings: Settings | None = None,
+    ai_service: AIService | None = None,
+    services_bundle: ServicesBundle | None = None,
+    profile_service: ProfileService | None = None,
+) -> RecommendationService:
+    """Instantiate and wire up RecommendationService."""
+    active_settings = settings or get_settings()
+    resolved_ai = ai_service or build_ai_service(settings=active_settings)
+
+    bundle: ServicesBundle
+    if services_bundle is not None:
+        bundle = services_bundle
+    else:
+        services_tuple = build_container(
+            storage_type=storage_type,
+            data_file=data_file,
+            database_url=database_url,
+            settings=active_settings,
+        )
+        bundle = ServicesBundle(
+            journey_service=services_tuple[0],
+            section_service=services_tuple[1],
+            topic_service=services_tuple[2],
+            note_service=services_tuple[3],
+            progress_service=services_tuple[4],
+        )
+
+    prof_service = profile_service or build_profile_service(
+        storage_type=storage_type,
+        data_file=data_file,
+        database_url=database_url,
+        settings=active_settings,
+        ai_service=resolved_ai,
+    )
+
+    from masar.application.services.recommendation_service import RecommendationService
+
+    return RecommendationService(
+        journey_service=bundle.journey_service,
+        section_service=bundle.section_service,
+        topic_service=bundle.topic_service,
+        note_service=bundle.note_service,
+        progress_service=bundle.progress_service,
+        profile_service=prof_service,
+        ai_service=resolved_ai,
+    )
+
 
 
 

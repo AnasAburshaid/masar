@@ -11,6 +11,9 @@ from masar.application.interfaces.repositories.conversation_repository import (
 from masar.application.interfaces.repositories.document_repository import (
     DocumentRepository,
 )
+from masar.application.interfaces.repositories.profile_repository import (
+    ProfileRepository,
+)
 from masar.application.services.action_service import ActionService
 from masar.application.services.ai_service import AIService
 from masar.application.services.tool_registry import ServicesBundle
@@ -79,7 +82,12 @@ DEFAULT_SYSTEM_PROMPT = (
     "- get_section_progress(section_id)\n\n"
     "You can chain multi-step actions by referencing created IDs with '$<index>.id' (e.g. '$0.id', '$1.id', '$prev.id').\n"
     "For learning roadmaps, create a comprehensive structure: 1 journey, multiple logical sections in learning order, "
-    "granular topics per section, and attach practical exercise notes to key topics."
+    "granular topics per section, and attach practical exercise notes to key topics.\n\n"
+    "### Adaptive Learning Tracking & Recommendations:\n"
+    "1. Actual Progress Visibility: You have real-time visibility into the user's active journeys, completion percentages, topics, notes, and personal knowledge profile.\n"
+    "2. Discussing Topics & Difficulties: When the developer discusses completed topics or concepts they struggle with, identify potential knowledge gaps, prerequisite deficiencies, or unnecessary repetition. Recommend what to study next and explain the pedagogical reasoning.\n"
+    "3. Strict Human-in-the-Loop Integrity: NEVER mark a topic as completed autonomously merely because the user asked a question or discussed it. All progress updates and journey modifications must be user-confirmed or proposed through action proposals for review.\n"
+    "4. Proposing Journey Improvements: Propose concrete updates (new topics, prerequisite sections, refresher notes) via action proposals with clear explanations of why they improve the learning plan."
 )
 
 
@@ -94,6 +102,7 @@ class ConversationService:
         action_service: Optional[ActionService] = None,
         services_bundle: Optional[ServicesBundle] = None,
         document_repository: Optional[DocumentRepository] = None,
+        profile_repository: Optional[ProfileRepository] = None,
     ) -> None:
         self._repo = conversation_repository
         self._ai = ai_service
@@ -101,6 +110,7 @@ class ConversationService:
         self._action_service = action_service
         self._services_bundle = services_bundle
         self._document_repo = document_repository
+        self._profile_repo = profile_repository
 
     def _build_user_context(self, user_id: int) -> str:
         """Construct a real-time contextual snapshot of the user's existing learning roadmaps."""
@@ -114,13 +124,33 @@ class ConversationService:
         lines = ["### User's Current Learning Roadmaps in Masar:"]
         for j in journeys:
             desc = f" ({j.description})" if j.description else ""
-            lines.append(f"- Journey #{j.id}: '{j.title}'{desc}")
+            prog = self._services_bundle.progress_service.calculate_journey_progress(j.id or 1, user_id=user_id)
+            lines.append(f"- Journey #{j.id}: '{j.title}'{desc} [{prog.percentage:.0f}% completed ({prog.completed_topics}/{prog.total_topics} topics)]")
             sections = self._services_bundle.section_service.list_sections(journey_id=j.id or 1, user_id=user_id)
             for s in sections:
                 topics = self._services_bundle.topic_service.list_topics(section_id=s.id or 1, user_id=user_id)
                 topic_summaries = [f"'{t.title}'" + (" [completed]" if t.is_completed else "") for t in topics]
                 topic_str = f" (Topics: {', '.join(topic_summaries)})" if topic_summaries else " (No topics yet)"
                 lines.append(f"  * Section #{s.id}: '{s.title}'{topic_str}")
+
+        if self._profile_repo:
+            profile = self._profile_repo.get_profile(user_id)
+            if profile.items or profile.bio:
+                lines.append("\n### User's Personal Knowledge Profile:")
+                if profile.bio:
+                    lines.append(f"Background Bio: {profile.bio}")
+                confirmed = profile.confirmed_items
+                if confirmed:
+                    skill_parts = [f"{i.name} ({i.level})" if i.level else i.name for i in confirmed]
+                    lines.append(f"- User-Confirmed Skills & Knowledge (Proven): {', '.join(skill_parts)}")
+                inferred = profile.inferred_items
+                if inferred:
+                    inferred_parts = [f"{i.name} ({i.level})" if i.level else i.name for i in inferred]
+                    lines.append(f"- AI-Inferred Skills (Needs Confirmation): {', '.join(inferred_parts)}")
+                goals = [i.name for i in profile.items if i.category == "goal"]
+                if goals:
+                    lines.append(f"- Stated Learning Goals & Focus: {', '.join(goals)}")
+
         return "\n".join(lines)
 
     def create_conversation(

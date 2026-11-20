@@ -33,12 +33,12 @@ Use the following conceptual layers and directory organization, each governed by
 
 1. **Domain Layer (`masar/domain/`)** — See [masar/domain/AGENTS.md](masar/domain/AGENTS.md)
    - Core business entities, models, and domain rules.
-   - Domain models are separated into individual files (`domain/models/journey.py`, `domain/models/section.py`, `domain/models/topic.py`, `domain/models/note.py`, `domain/models/progress.py`, `domain/models/user.py`, `domain/models/ai.py`, `domain/models/conversation.py`, `domain/models/action.py`, `domain/models/document.py`).
-   - Domain exceptions are organized separately under `domain/exceptions/` (`base.py`, `journey.py`, `section.py`, `topic.py`, `note.py`, `user.py`, `ai.py`, `conversation.py`, `action.py`, `document.py`, `storage.py`).
+   - Domain models are separated into individual files (`domain/models/journey.py`, `domain/models/section.py`, `domain/models/topic.py`, `domain/models/note.py`, `domain/models/progress.py`, `domain/models/user.py`, `domain/models/ai.py`, `domain/models/conversation.py`, `domain/models/action.py`, `domain/models/document.py`, `domain/models/profile.py`, `domain/models/recommendation.py`).
+   - Domain exceptions are organized separately under `domain/exceptions/` (`base.py`, `journey.py`, `section.py`, `topic.py`, `note.py`, `user.py`, `ai.py`, `conversation.py`, `action.py`, `document.py`, `profile.py`, `recommendation.py`, `storage.py`).
    - **Rule:** Domain must not depend on Application, Infrastructure, Presentation, or Frontend.
 
 2. **Application Layer (`masar/application/`)** — See [masar/application/AGENTS.md](masar/application/AGENTS.md)
-   - Application services and use cases organized into individual files (`journey_service.py`, `section_service.py`, `topic_service.py`, `note_service.py`, `progress_service.py`, `user_service.py`, `ai_service.py`, `conversation_service.py`, `action_service.py`, `tool_registry.py`, `document_extractor.py`, `document_service.py`).
+   - Application services and use cases organized into individual files (`journey_service.py`, `section_service.py`, `topic_service.py`, `note_service.py`, `progress_service.py`, `user_service.py`, `ai_service.py`, `conversation_service.py`, `action_service.py`, `tool_registry.py`, `document_extractor.py`, `document_service.py`, `profile_service.py`, `recommendation_service.py`).
    - Repository abstractions defined in `application/interfaces/repositories/`, security in `application/interfaces/security/`, and AI provider in `application/interfaces/ai/`.
    - Pydantic v2 DTO validation schemas defined in `application/schemas/`.
    - **Rule:** Application depends on Domain and abstract interfaces. Application must NOT import or depend on concrete Infrastructure or Presentation implementations.

@@ -43,6 +43,12 @@ from masar.domain.exceptions.document import (
 )
 from masar.domain.exceptions.journey import JourneyNotFoundError
 from masar.domain.exceptions.note import NoteNotFoundError
+from masar.domain.exceptions.profile import (
+    ProfileAccessDeniedError,
+    ProfileError,
+    ProfileItemNotFoundError,
+)
+from masar.domain.exceptions.recommendation import RecommendationError
 from masar.domain.exceptions.section import SectionNotFoundError
 from masar.domain.exceptions.storage import (
     CorruptedStorageError,
@@ -93,6 +99,10 @@ __all__ = [
     "InvalidTokenError",
     "JourneyNotFoundError",
     "NoteNotFoundError",
+    "ProfileAccessDeniedError",
+    "ProfileError",
+    "ProfileItemNotFoundError",
+    "RecommendationError",
     "SectionNotFoundError",
     "StorageAccessError",
     "StorageError",

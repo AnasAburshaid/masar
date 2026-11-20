@@ -21,6 +21,10 @@ from masar.domain.exceptions import (
     EmptyDocumentError,
     EntityNotFoundError,
     FileTooLargeError,
+    ProfileAccessDeniedError,
+    ProfileError,
+    ProfileItemNotFoundError,
+    RecommendationError,
     StorageError,
     UnsupportedFileTypeError,
     UserAlreadyExistsError,
@@ -31,7 +35,9 @@ from masar.presentation.api.routes.conversations import router as conversations_
 from masar.presentation.api.routes.documents import router as documents_router
 from masar.presentation.api.routes.journeys import router as journeys_router
 from masar.presentation.api.routes.notes import router as notes_router
+from masar.presentation.api.routes.profile import router as profile_router
 from masar.presentation.api.routes.progress import router as progress_router
+from masar.presentation.api.routes.recommendations import router as recommendations_router
 from masar.presentation.api.routes.root import router as root_router
 from masar.presentation.api.routes.sections import router as sections_router
 from masar.presentation.api.routes.topics import router as topics_router
@@ -193,6 +199,34 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             content={"detail": str(exc)},
         )
 
+    @app.exception_handler(ProfileItemNotFoundError)
+    async def profile_item_not_found_handler(request: Request, exc: ProfileItemNotFoundError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(ProfileAccessDeniedError)
+    async def profile_access_denied_handler(request: Request, exc: ProfileAccessDeniedError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(ProfileError)
+    async def profile_error_handler(request: Request, exc: ProfileError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(RecommendationError)
+    async def recommendation_error_handler(request: Request, exc: RecommendationError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": str(exc)},
+        )
+
     # Attach settings and application services to app state
     from masar.application.services.tool_registry import ServicesBundle
     from masar.container import (
@@ -201,6 +235,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         build_container,
         build_conversation_service,
         build_document_service,
+        build_profile_service,
+        build_recommendation_service,
         build_user_service,
     )
 
@@ -215,6 +251,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         settings=active_settings, ai_service=ai_service
     )
     app.state.document_service = document_service
+
+    profile_service = build_profile_service(
+        settings=active_settings,
+        ai_service=ai_service,
+        document_repository=document_service._repo,
+    )
+    app.state.profile_service = profile_service
 
     bundle = ServicesBundle(
         journey_service=services_tuple[0],
@@ -234,6 +277,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         action_service=action_service,
         services_bundle=bundle,
         document_repository=document_service._repo,
+        profile_repository=profile_service._repo,
+    )
+
+    app.state.recommendation_service = build_recommendation_service(
+        settings=active_settings,
+        ai_service=ai_service,
+        services_bundle=bundle,
+        profile_service=profile_service,
     )
 
     # Include routers
@@ -241,6 +292,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth_router)
     app.include_router(conversations_router)
     app.include_router(documents_router)
+    app.include_router(profile_router)
+    app.include_router(recommendations_router)
     app.include_router(journeys_router)
     app.include_router(sections_router)
     app.include_router(topics_router)
