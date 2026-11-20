@@ -22,6 +22,7 @@ masar/domain/
 │   ├── action.py               # ProposedAction, ActionResult, ActionProposal entities
 │   ├── document.py             # Document entity (uploaded learning materials, PDF/MD/TXT)
 │   ├── profile.py              # ProfileItem entity and LearningProfile aggregate (skills, goals, levels)
+│   ├── recommendation.py       # Recommendation, KnowledgeGap, and AdaptiveLearningSummary domain models
 │   └── __init__.py             # Re-exports of all domain models
 ├── exceptions/                 # Granular domain exception hierarchy
 │   ├── base.py                 # DomainError base class and semantic classifications
@@ -35,6 +36,7 @@ masar/domain/
 │   ├── action.py               # UnknownToolError, ActionProposalNotFoundError, ActionExecutionError, etc.
 │   ├── document.py             # DocumentError, UnsupportedFileType, FileTooLarge, etc.
 │   ├── profile.py              # ProfileError, ProfileItemNotFoundError, ProfileAccessDeniedError
+│   ├── recommendation.py       # RecommendationError base exception
 │   ├── storage.py              # Domain-level persistence failure exceptions
 │   └── __init__.py             # Clean re-exports of all domain exceptions
 ├── types.py                    # Domain enums and type aliases (e.g., TopicStatus)

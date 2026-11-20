@@ -43,6 +43,7 @@ masar/application/
 │   ├── action.py               # ProposedAction, ActionResult, ActionProposal schemas
 │   ├── document.py             # DocumentResponse, DocumentDetail, DocumentSummarizeResponse
 │   ├── profile.py              # ProfileItemSchema, LearningProfileResponseSchema, ProfileBioUpdateSchema
+│   ├── recommendation.py       # RecommendationSchema, KnowledgeGapSchema, AdaptiveLearningSummarySchema
 │   └── __init__.py
 ├── services/                   # Application Use Cases & Workflows
 │   ├── journey_service.py      # CRUD, filtering, and ownership verification for journeys
@@ -58,6 +59,7 @@ masar/application/
 │   ├── document_extractor.py   # Multi-format plain text extraction (PDF, TXT, MD)
 │   ├── document_service.py     # Document uploads, text extraction, AI summarization, and retrieval
 │   ├── profile_service.py      # Personal knowledge profile, skill confirmations, document skill extraction
+│   ├── recommendation_service.py # Adaptive learning next-steps, knowledge gaps detection, journey improvement
 │   └── __init__.py
 ├── __init__.py                 # Top-level application re-exports
 └── AGENTS.md                   # This specification file

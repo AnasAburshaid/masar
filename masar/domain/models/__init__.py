@@ -8,6 +8,11 @@ from masar.domain.models.journey import Journey
 from masar.domain.models.note import Note
 from masar.domain.models.profile import LearningProfile, ProfileItem
 from masar.domain.models.progress import Progress
+from masar.domain.models.recommendation import (
+    AdaptiveLearningSummary,
+    KnowledgeGap,
+    Recommendation,
+)
 from masar.domain.models.section import Section
 from masar.domain.models.topic import Topic
 from masar.domain.models.user import User
@@ -17,16 +22,19 @@ __all__ = [
     "AIUsage",
     "ActionProposal",
     "ActionResult",
+    "AdaptiveLearningSummary",
     "ChatMessage",
     "Conversation",
     "ConversationMessage",
     "Document",
     "Journey",
+    "KnowledgeGap",
     "LearningProfile",
     "Note",
     "ProfileItem",
     "Progress",
     "ProposedAction",
+    "Recommendation",
     "Section",
     "Topic",
     "User",

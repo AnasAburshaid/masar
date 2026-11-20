@@ -7,8 +7,10 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuth } from '@/context/AuthContext';
 import { journeyService } from '@/services/api/journeys';
 import { progressService } from '@/services/api/progress';
+import { recommendationService } from '@/services/api/recommendations';
 import { Journey } from '@/types/journey';
 import { JourneyProgress, DashboardStats } from '@/types/progress';
+import { AdaptiveLearningSummary } from '@/types/recommendation';
 import { ApiError } from '@/services/api/errors';
 
 function DashboardContent() {
@@ -26,6 +28,7 @@ function DashboardContent() {
     inProgressTopics: 0,
     overallPercentage: 0,
   });
+  const [adaptiveSummary, setAdaptiveSummary] = useState<AdaptiveLearningSummary | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
@@ -75,6 +78,15 @@ function DashboardContent() {
       // 3. Compute aggregated statistics
       const calculatedStats = progressService.calculateDashboardStats(progressList);
       setStats(calculatedStats);
+
+      // 4. Fetch adaptive learning recommendations
+      try {
+        const recSummary = await recommendationService.getRecommendations();
+        setAdaptiveSummary(recSummary);
+      } catch {
+        // Fallback silently if recommendations fail
+        setAdaptiveSummary(null);
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         setErrorBanner(err.userMessage);
@@ -314,6 +326,124 @@ function DashboardContent() {
               </div>
             </div>
           )}
+
+          {/* Adaptive AI Recommendations & Knowledge Gaps */}
+          {adaptiveSummary &&
+            (adaptiveSummary.recommendations.length > 0 ||
+              adaptiveSummary.knowledge_gaps.length > 0) && (
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                        Adaptive Recommendations & Next Steps
+                      </h2>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        Personalized AI Guidance
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Calculated from your actual completion rates, personal notes, and knowledge profile.
+                    </p>
+                  </div>
+                  <Link
+                    href="/chat"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                  >
+                    <span>Discuss in AI Chat</span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                </div>
+
+                {/* Knowledge Gaps Alert if any */}
+                {adaptiveSummary.knowledge_gaps.length > 0 && (
+                  <div className="p-4 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/60 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                      <h3 className="text-xs font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider">
+                        Identified Knowledge Gaps ({adaptiveSummary.knowledge_gaps.length})
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {adaptiveSummary.knowledge_gaps.map((gap, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900/60 text-xs space-y-1 shadow-xs"
+                        >
+                          <span className="font-bold text-slate-900 dark:text-white">
+                            Missing Focus: {gap.topic_name}
+                          </span>
+                          <p className="text-slate-600 dark:text-slate-300">{gap.description}</p>
+                          <p className="text-emerald-700 dark:text-emerald-400 font-medium">
+                            Suggested Remedy: {gap.remedy}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recommendations Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {adaptiveSummary.recommendations.map((rec, idx) => {
+                    const typeBadgeColor =
+                      rec.recommendation_type === 'next_topic'
+                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                        : rec.recommendation_type === 'review_refresher'
+                        ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
+
+                    return (
+                      <div
+                        key={idx}
+                        className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3"
+                      >
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${typeBadgeColor}`}
+                            >
+                              {rec.recommendation_type.replace('_', ' ')}
+                            </span>
+                            {rec.journey_title && (
+                              <span className="text-[11px] font-medium text-slate-400 truncate max-w-[130px]">
+                                {rec.journey_title}
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                            {rec.title}
+                          </h4>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                            {rec.reason}
+                          </p>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                          {rec.journey_id ? (
+                            <Link
+                              href={`/journeys/${rec.journey_id}`}
+                              className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                            >
+                              <span>Open Journey</span>
+                              <span>→</span>
+                            </Link>
+                          ) : (
+                            <Link
+                              href="/chat"
+                              className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                            >
+                              <span>Ask Mentor</span>
+                              <span>→</span>
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
           {/* Individual Journeys Progress Section */}
           <div className="space-y-4">

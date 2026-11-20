@@ -42,6 +42,7 @@ frontend/
 │   │   ├── conversations.ts    # /conversations CRUD and message submission
 │   │   ├── documents.ts        # /documents CRUD, uploads, and AI summarization
 │   │   ├── profile.ts          # /profile (getProfile, updateBio, addItem, confirmItem, deleteItem, extract)
+│   │   ├── recommendations.ts  # /recommendations (getRecommendations, improveJourney)
 │   │   ├── actions.ts          # /conversations/{id}/proposals (list, get, approve, reject)
 │   │   ├── progress.ts         # /journeys/{id}/progress & dashboard metrics aggregator
 │   │   └── health.ts           # /health and root status
@@ -53,7 +54,8 @@ frontend/
 │   │   ├── health.ts
 │   │   ├── journey.ts
 │   │   ├── profile.ts
-│   │   └── progress.ts
+│   │   ├── progress.ts
+│   │   └── recommendation.ts
 │   └── config/env.ts           # Centralized environment variables (NEXT_PUBLIC_API_URL)
 ├── package.json                # Project dependencies and npm scripts
 ├── tsconfig.json               # TypeScript compiler configuration

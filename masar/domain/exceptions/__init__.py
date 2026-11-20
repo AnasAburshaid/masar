@@ -48,6 +48,7 @@ from masar.domain.exceptions.profile import (
     ProfileError,
     ProfileItemNotFoundError,
 )
+from masar.domain.exceptions.recommendation import RecommendationError
 from masar.domain.exceptions.section import SectionNotFoundError
 from masar.domain.exceptions.storage import (
     CorruptedStorageError,
@@ -101,6 +102,7 @@ __all__ = [
     "ProfileAccessDeniedError",
     "ProfileError",
     "ProfileItemNotFoundError",
+    "RecommendationError",
     "SectionNotFoundError",
     "StorageAccessError",
     "StorageError",

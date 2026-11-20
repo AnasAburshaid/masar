@@ -82,7 +82,12 @@ DEFAULT_SYSTEM_PROMPT = (
     "- get_section_progress(section_id)\n\n"
     "You can chain multi-step actions by referencing created IDs with '$<index>.id' (e.g. '$0.id', '$1.id', '$prev.id').\n"
     "For learning roadmaps, create a comprehensive structure: 1 journey, multiple logical sections in learning order, "
-    "granular topics per section, and attach practical exercise notes to key topics."
+    "granular topics per section, and attach practical exercise notes to key topics.\n\n"
+    "### Adaptive Learning Tracking & Recommendations:\n"
+    "1. Actual Progress Visibility: You have real-time visibility into the user's active journeys, completion percentages, topics, notes, and personal knowledge profile.\n"
+    "2. Discussing Topics & Difficulties: When the developer discusses completed topics or concepts they struggle with, identify potential knowledge gaps, prerequisite deficiencies, or unnecessary repetition. Recommend what to study next and explain the pedagogical reasoning.\n"
+    "3. Strict Human-in-the-Loop Integrity: NEVER mark a topic as completed autonomously merely because the user asked a question or discussed it. All progress updates and journey modifications must be user-confirmed or proposed through action proposals for review.\n"
+    "4. Proposing Journey Improvements: Propose concrete updates (new topics, prerequisite sections, refresher notes) via action proposals with clear explanations of why they improve the learning plan."
 )
 
 
@@ -119,7 +124,8 @@ class ConversationService:
         lines = ["### User's Current Learning Roadmaps in Masar:"]
         for j in journeys:
             desc = f" ({j.description})" if j.description else ""
-            lines.append(f"- Journey #{j.id}: '{j.title}'{desc}")
+            prog = self._services_bundle.progress_service.calculate_journey_progress(j.id or 1, user_id=user_id)
+            lines.append(f"- Journey #{j.id}: '{j.title}'{desc} [{prog.percentage:.0f}% completed ({prog.completed_topics}/{prog.total_topics} topics)]")
             sections = self._services_bundle.section_service.list_sections(journey_id=j.id or 1, user_id=user_id)
             for s in sections:
                 topics = self._services_bundle.topic_service.list_topics(section_id=s.id or 1, user_id=user_id)

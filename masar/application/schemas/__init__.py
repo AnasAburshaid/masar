@@ -46,6 +46,11 @@ from masar.application.schemas.profile import (
     ProfileItemSchema,
     ProfileItemUpdateSchema,
 )
+from masar.application.schemas.recommendation import (
+    AdaptiveLearningSummarySchema,
+    KnowledgeGapSchema,
+    RecommendationSchema,
+)
 from masar.application.schemas.progress import (
     JourneyProgressSchema,
     SectionProgressSchema,
@@ -83,6 +88,7 @@ __all__ = [
     "ActionProposalCreateSchema",
     "ActionProposalResponseSchema",
     "ActionResultSchema",
+    "AdaptiveLearningSummarySchema",
     "ProposedActionSchema",
     # AI
     "AIResponseSchema",
@@ -128,6 +134,9 @@ __all__ = [
     "ProfileItemCreateSchema",
     "ProfileItemSchema",
     "ProfileItemUpdateSchema",
+    # Recommendation
+    "KnowledgeGapSchema",
+    "RecommendationSchema",
     # Storage
     "StorageDataSchema",
     "StorageJourneyRecord",

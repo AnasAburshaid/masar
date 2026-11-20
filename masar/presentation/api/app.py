@@ -24,6 +24,7 @@ from masar.domain.exceptions import (
     ProfileAccessDeniedError,
     ProfileError,
     ProfileItemNotFoundError,
+    RecommendationError,
     StorageError,
     UnsupportedFileTypeError,
     UserAlreadyExistsError,
@@ -36,6 +37,7 @@ from masar.presentation.api.routes.journeys import router as journeys_router
 from masar.presentation.api.routes.notes import router as notes_router
 from masar.presentation.api.routes.profile import router as profile_router
 from masar.presentation.api.routes.progress import router as progress_router
+from masar.presentation.api.routes.recommendations import router as recommendations_router
 from masar.presentation.api.routes.root import router as root_router
 from masar.presentation.api.routes.sections import router as sections_router
 from masar.presentation.api.routes.topics import router as topics_router
@@ -218,6 +220,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             content={"detail": str(exc)},
         )
 
+    @app.exception_handler(RecommendationError)
+    async def recommendation_error_handler(request: Request, exc: RecommendationError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": str(exc)},
+        )
+
     # Attach settings and application services to app state
     from masar.application.services.tool_registry import ServicesBundle
     from masar.container import (
@@ -227,6 +236,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         build_conversation_service,
         build_document_service,
         build_profile_service,
+        build_recommendation_service,
         build_user_service,
     )
 
@@ -270,12 +280,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         profile_repository=profile_service._repo,
     )
 
+    app.state.recommendation_service = build_recommendation_service(
+        settings=active_settings,
+        ai_service=ai_service,
+        services_bundle=bundle,
+        profile_service=profile_service,
+    )
+
     # Include routers
     app.include_router(root_router)
     app.include_router(auth_router)
     app.include_router(conversations_router)
     app.include_router(documents_router)
     app.include_router(profile_router)
+    app.include_router(recommendations_router)
     app.include_router(journeys_router)
     app.include_router(sections_router)
     app.include_router(topics_router)

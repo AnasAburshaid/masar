@@ -13,6 +13,7 @@ from masar.application.services import (
     NoteService,
     ProfileService,
     ProgressService,
+    RecommendationService,
     SectionService,
     TopicService,
     UserService,
@@ -178,6 +179,37 @@ def get_profile_service(request: Request) -> ProfileService:
         document_repository=doc_service._repo,
     )
     request.app.state.profile_service = service
+    return service
+
+
+def get_recommendation_service(request: Request) -> RecommendationService:
+    """Dependency provider for RecommendationService."""
+    if (
+        hasattr(request.app.state, "recommendation_service")
+        and request.app.state.recommendation_service is not None
+    ):
+        return cast(RecommendationService, request.app.state.recommendation_service)
+    from masar.application.services.tool_registry import ServicesBundle
+    from masar.container import build_recommendation_service
+
+    settings = get_app_settings(request)
+    services_tuple = get_services(request)
+    bundle = ServicesBundle(
+        journey_service=services_tuple[0],
+        section_service=services_tuple[1],
+        topic_service=services_tuple[2],
+        note_service=services_tuple[3],
+        progress_service=services_tuple[4],
+    )
+    ai_service = get_ai_service(request)
+    profile_service = get_profile_service(request)
+    service = build_recommendation_service(
+        settings=settings,
+        ai_service=ai_service,
+        services_bundle=bundle,
+        profile_service=profile_service,
+    )
+    request.app.state.recommendation_service = service
     return service
 
 

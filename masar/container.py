@@ -23,6 +23,7 @@ from masar.application.services import (
     NoteService,
     ProfileService,
     ProgressService,
+    RecommendationService,
     SectionService,
     ServicesBundle,
     ToolRegistry,
@@ -588,6 +589,58 @@ def build_profile_service(
         profile_repository=prof_repo,
         ai_service=resolved_ai,
         document_repository=doc_repo,
+    )
+
+
+def build_recommendation_service(
+    storage_type: str | None = None,
+    data_file: str | Path | None = None,
+    database_url: str | None = None,
+    settings: Settings | None = None,
+    ai_service: AIService | None = None,
+    services_bundle: ServicesBundle | None = None,
+    profile_service: ProfileService | None = None,
+) -> RecommendationService:
+    """Instantiate and wire up RecommendationService."""
+    active_settings = settings or get_settings()
+    resolved_ai = ai_service or build_ai_service(settings=active_settings)
+
+    bundle: ServicesBundle
+    if services_bundle is not None:
+        bundle = services_bundle
+    else:
+        services_tuple = build_container(
+            storage_type=storage_type,
+            data_file=data_file,
+            database_url=database_url,
+            settings=active_settings,
+        )
+        bundle = ServicesBundle(
+            journey_service=services_tuple[0],
+            section_service=services_tuple[1],
+            topic_service=services_tuple[2],
+            note_service=services_tuple[3],
+            progress_service=services_tuple[4],
+        )
+
+    prof_service = profile_service or build_profile_service(
+        storage_type=storage_type,
+        data_file=data_file,
+        database_url=database_url,
+        settings=active_settings,
+        ai_service=resolved_ai,
+    )
+
+    from masar.application.services.recommendation_service import RecommendationService
+
+    return RecommendationService(
+        journey_service=bundle.journey_service,
+        section_service=bundle.section_service,
+        topic_service=bundle.topic_service,
+        note_service=bundle.note_service,
+        progress_service=bundle.progress_service,
+        profile_service=prof_service,
+        ai_service=resolved_ai,
     )
 
 
