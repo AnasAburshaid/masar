@@ -6,6 +6,9 @@ from masar.application.interfaces.repositories.action_proposal_repository import
 from masar.application.interfaces.repositories.conversation_repository import (
     ConversationRepository,
 )
+from masar.application.interfaces.repositories.document_repository import (
+    DocumentRepository,
+)
 from masar.application.interfaces.repositories.journey_repository import (
     JourneyRepository,
 )
@@ -19,6 +22,7 @@ from masar.application.interfaces.repositories.user_repository import UserReposi
 __all__ = [
     "ActionProposalRepository",
     "ConversationRepository",
+    "DocumentRepository",
     "JourneyRepository",
     "NoteRepository",
     "SectionRepository",

@@ -42,6 +42,12 @@ class MessageCreateSchema(BaseModel):
         min_length=1,
         description="Text content of the message",
     )
+    document_id: Optional[int] = Field(
+        default=None,
+        gt=0,
+        description="Optional ID of an uploaded document to attach as context",
+    )
+
 
 
 class MessageResponseSchema(BaseModel):

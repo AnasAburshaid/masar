@@ -8,8 +8,12 @@ from typing import Any, Optional
 from masar.application.interfaces.repositories.conversation_repository import (
     ConversationRepository,
 )
+from masar.application.interfaces.repositories.document_repository import (
+    DocumentRepository,
+)
 from masar.application.services.action_service import ActionService
 from masar.application.services.ai_service import AIService
+from masar.application.services.tool_registry import ServicesBundle
 from masar.domain.exceptions.base import EmptyFieldError, InvalidIdError
 from masar.domain.exceptions.conversation import (
     ConversationAccessDeniedError,
@@ -88,11 +92,36 @@ class ConversationService:
         ai_service: AIService,
         system_prompt: str = DEFAULT_SYSTEM_PROMPT,
         action_service: Optional[ActionService] = None,
+        services_bundle: Optional[ServicesBundle] = None,
+        document_repository: Optional[DocumentRepository] = None,
     ) -> None:
         self._repo = conversation_repository
         self._ai = ai_service
         self._system_prompt = system_prompt
         self._action_service = action_service
+        self._services_bundle = services_bundle
+        self._document_repo = document_repository
+
+    def _build_user_context(self, user_id: int) -> str:
+        """Construct a real-time contextual snapshot of the user's existing learning roadmaps."""
+        if not self._services_bundle:
+            return ""
+
+        journeys = self._services_bundle.journey_service.list_journeys(user_id=user_id)
+        if not journeys:
+            return "User currently has no existing learning journeys in Masar."
+
+        lines = ["### User's Current Learning Roadmaps in Masar:"]
+        for j in journeys:
+            desc = f" ({j.description})" if j.description else ""
+            lines.append(f"- Journey #{j.id}: '{j.title}'{desc}")
+            sections = self._services_bundle.section_service.list_sections(journey_id=j.id or 1, user_id=user_id)
+            for s in sections:
+                topics = self._services_bundle.topic_service.list_topics(section_id=s.id or 1, user_id=user_id)
+                topic_summaries = [f"'{t.title}'" + (" [completed]" if t.is_completed else "") for t in topics]
+                topic_str = f" (Topics: {', '.join(topic_summaries)})" if topic_summaries else " (No topics yet)"
+                lines.append(f"  * Section #{s.id}: '{s.title}'{topic_str}")
+        return "\n".join(lines)
 
     def create_conversation(
         self, user_id: int, title: Optional[str] = None
@@ -133,7 +162,11 @@ class ConversationService:
         return self._repo.delete_conversation(conversation_id)
 
     def send_message(
-        self, conversation_id: int, user_id: int, content: str
+        self,
+        conversation_id: int,
+        user_id: int,
+        content: str,
+        document_id: Optional[int] = None,
     ) -> tuple[ConversationMessage, ConversationMessage, Optional[ActionProposal]]:
         """Record user message, dispatch multi-turn dialogue to AI, and persist response."""
         conv = self._verify_ownership(conversation_id, user_id)
@@ -160,9 +193,28 @@ class ConversationService:
         # 3. Retrieve conversation history for multi-turn context
         all_messages = self._repo.get_messages_by_conversation_id(conversation_id)
 
-        # 4. Construct ChatMessage dialogue with system instructions
+        # 4. Construct ChatMessage dialogue with system instructions and user context
+        user_context = self._build_user_context(user_id)
+        effective_system_prompt = self._system_prompt
+        if user_context:
+            effective_system_prompt = f"{effective_system_prompt}\n\n{user_context}"
+
+        # Inject attached document context if provided
+        if document_id is not None and self._document_repo is not None:
+            doc = self._document_repo.get_by_id(document_id)
+            if doc and doc.user_id == user_id:
+                content_excerpt = doc.extracted_text[:6000]
+                summary_excerpt = f"Summary: {doc.summary}\n" if doc.summary else ""
+                effective_system_prompt = (
+                    f"{effective_system_prompt}\n\n"
+                    f"### Attached Document Context ('{doc.filename}', Type: {doc.file_type}):\n"
+                    f"{summary_excerpt}"
+                    f"Content Excerpt:\n{content_excerpt}\n"
+                    f"### End Attached Document"
+                )
+
         dialogue: list[ChatMessage] = [
-            ChatMessage(role="system", content=self._system_prompt)
+            ChatMessage(role="system", content=effective_system_prompt)
         ]
         for m in all_messages:
             dialogue.append(ChatMessage(role=m.role, content=m.content))

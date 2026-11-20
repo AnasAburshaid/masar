@@ -6,6 +6,7 @@ from masar.application.interfaces.ai import AIProvider
 from masar.application.interfaces.repositories import (
     ActionProposalRepository,
     ConversationRepository,
+    DocumentRepository,
     JourneyRepository,
     NoteRepository,
     SectionRepository,
@@ -16,6 +17,7 @@ from masar.application.services import (
     ActionService,
     AIService,
     ConversationService,
+    DocumentService,
     JourneyService,
     NoteService,
     ProgressService,
@@ -329,33 +331,32 @@ def build_action_service(
 def build_conversation_service(
     storage_type: str | None = None,
     database_url: str | None = None,
+    data_file: str | Path | None = None,
     settings: Settings | None = None,
     ai_service: AIService | None = None,
     conversation_repository: ConversationRepository | None = None,
     action_service: ActionService | None = None,
+    services_bundle: ServicesBundle | None = None,
+    document_repository: DocumentRepository | None = None,
 ) -> ConversationService:
-    """Instantiate and wire up ConversationRepository, AIService, ActionService, and ConversationService."""
+    """Instantiate and wire up ConversationRepository, AIService, ActionService, ServicesBundle, DocumentRepository, and ConversationService."""
     active_settings = settings or get_settings()
     resolved_ai = ai_service or build_ai_service(settings=active_settings)
     resolved_action_service = action_service or build_action_service(
         storage_type=storage_type,
         database_url=database_url,
         settings=active_settings,
+        services_bundle=services_bundle,
     )
-
-    if conversation_repository is not None:
-        return ConversationService(
-            conversation_repository=conversation_repository,
-            ai_service=resolved_ai,
-            action_service=resolved_action_service,
-        )
 
     resolved_storage = (
         storage_type if storage_type is not None else active_settings.storage_type
     )
 
     conv_repo: ConversationRepository
-    if resolved_storage in ("database", "postgres"):
+    if conversation_repository is not None:
+        conv_repo = conversation_repository
+    elif resolved_storage in ("database", "postgres"):
         from masar.infrastructure.database.session import Base, get_engine, get_session_factory
         from masar.infrastructure.repositories.database.conversation_repository import (
             SqlConversationRepository,
@@ -378,10 +379,108 @@ def build_conversation_service(
     else:
         raise ValueError(f"Unknown storage type: {resolved_storage}")
 
+    doc_repo: DocumentRepository | None = document_repository
+    if doc_repo is None:
+        if resolved_storage in ("database", "postgres"):
+            from masar.infrastructure.database.session import Base, get_engine, get_session_factory
+            from masar.infrastructure.repositories.database.document_repository import (
+                SqlDocumentRepository,
+            )
+
+            resolved_db_url = (
+                database_url if database_url is not None else active_settings.database_url
+            )
+            engine = get_engine(resolved_db_url)
+            Base.metadata.create_all(bind=engine)
+            session_factory = get_session_factory(resolved_db_url)
+            db_session = session_factory()
+            doc_repo = SqlDocumentRepository(db_session)
+        elif resolved_storage == "json":
+            from masar.infrastructure.repositories.json.document_repository import (
+                JsonDocumentRepository,
+            )
+
+            resolved_data_file = (
+                data_file if data_file is not None else active_settings.data_file
+            )
+            storage = JsonStorage(resolved_data_file)
+            doc_repo = JsonDocumentRepository(storage)
+        elif resolved_storage == "in_memory":
+            from masar.infrastructure.repositories.in_memory.document_repository import (
+                InMemoryDocumentRepository,
+            )
+
+            doc_repo = InMemoryDocumentRepository()
+
     return ConversationService(
         conversation_repository=conv_repo,
         ai_service=resolved_ai,
         action_service=resolved_action_service,
+        services_bundle=services_bundle,
+        document_repository=doc_repo,
     )
+
+
+def build_document_service(
+    storage_type: str | None = None,
+    data_file: str | Path | None = None,
+    database_url: str | None = None,
+    settings: Settings | None = None,
+    ai_service: AIService | None = None,
+    document_repository: DocumentRepository | None = None,
+) -> DocumentService:
+    """Instantiate and wire up DocumentRepository, AIService, and DocumentService."""
+    active_settings = settings or get_settings()
+    resolved_ai = ai_service or build_ai_service(settings=active_settings)
+
+    if document_repository is not None:
+        return DocumentService(
+            document_repository=document_repository,
+            ai_service=resolved_ai,
+        )
+
+    resolved_storage = (
+        storage_type if storage_type is not None else active_settings.storage_type
+    )
+
+    doc_repo: DocumentRepository
+    if resolved_storage in ("database", "postgres"):
+        from masar.infrastructure.database.session import Base, get_engine, get_session_factory
+        from masar.infrastructure.repositories.database.document_repository import (
+            SqlDocumentRepository,
+        )
+
+        resolved_db_url = (
+            database_url if database_url is not None else active_settings.database_url
+        )
+        engine = get_engine(resolved_db_url)
+        Base.metadata.create_all(bind=engine)
+        session_factory = get_session_factory(resolved_db_url)
+        db_session = session_factory()
+        doc_repo = SqlDocumentRepository(db_session)
+    elif resolved_storage == "json":
+        from masar.infrastructure.repositories.json.document_repository import (
+            JsonDocumentRepository,
+        )
+
+        resolved_data_file = (
+            data_file if data_file is not None else active_settings.data_file
+        )
+        storage = JsonStorage(resolved_data_file)
+        doc_repo = JsonDocumentRepository(storage)
+    elif resolved_storage == "in_memory":
+        from masar.infrastructure.repositories.in_memory.document_repository import (
+            InMemoryDocumentRepository,
+        )
+
+        doc_repo = InMemoryDocumentRepository()
+    else:
+        raise ValueError(f"Unknown storage type: {resolved_storage}")
+
+    return DocumentService(
+        document_repository=doc_repo,
+        ai_service=resolved_ai,
+    )
+
 
 

@@ -33,6 +33,7 @@ export interface UpdateConversationPayload {
 
 export interface SendMessagePayload {
   content: string;
+  document_id?: number | null;
 }
 
 export interface SendMessageResponse {

@@ -174,6 +174,7 @@ def send_message(
         conversation_id=conversation_id,
         user_id=current_user.id or 1,
         content=payload.content,
+        document_id=payload.document_id,
     )
     return SendMessageResponseSchema(
         user_message=MessageResponseSchema.model_validate(user_msg),

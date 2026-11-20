@@ -16,10 +16,11 @@ from masar.domain.exceptions import (
     SectionNotFoundError,
     TopicNotFoundError,
 )
-from masar.domain.models import Journey, Note, Section, Topic
-from masar.infrastructure.database.models import JourneyModel, NoteModel, SectionModel, TopicModel
+from masar.domain.models import Document, Journey, Note, Section, Topic
+from masar.infrastructure.database.models import DocumentModel, JourneyModel, NoteModel, SectionModel, TopicModel
 from masar.infrastructure.database.session import Base, get_engine, normalize_database_url
 from masar.infrastructure.repositories.database import (
+    SqlDocumentRepository,
     SqlJourneyRepository,
     SqlNoteRepository,
     SqlSectionRepository,
@@ -60,6 +61,7 @@ class TestSqlRepositories(unittest.TestCase):
         self.section_repo = SqlSectionRepository(self.session)
         self.topic_repo = SqlTopicRepository(self.session)
         self.note_repo = SqlNoteRepository(self.session)
+        self.doc_repo = SqlDocumentRepository(self.session)
 
     def tearDown(self) -> None:
         self.session.close()
@@ -245,6 +247,39 @@ class TestSqlRepositories(unittest.TestCase):
         count = self.note_repo.delete_by_topic_id(topic.id)
         self.assertEqual(count, 1)
         self.assertEqual(len(self.note_repo.get_by_topic_id(topic.id)), 0)
+
+
+    def test_document_repository_crud(self) -> None:
+        doc = Document(
+            user_id=1,
+            filename="architecture.pdf",
+            file_type="pdf",
+            file_size_bytes=2048,
+            extracted_text="Microservices Architecture Overview",
+        )
+        saved = self.doc_repo.add(doc)
+        self.assertIsNotNone(saved.id)
+        self.assertEqual(saved.filename, "architecture.pdf")
+
+        # Get by id
+        fetched = self.doc_repo.get_by_id(saved.id or 1)
+        self.assertIsNotNone(fetched)
+        assert fetched is not None
+        self.assertEqual(fetched.file_type, "pdf")
+
+        # List by user
+        docs = self.doc_repo.list_by_user_id(1)
+        self.assertEqual(len(docs), 1)
+
+        # Update
+        fetched.update_summary("Microservices Summary")
+        updated = self.doc_repo.update(fetched)
+        self.assertEqual(updated.summary, "Microservices Summary")
+
+        # Delete
+        self.assertTrue(self.doc_repo.delete(saved.id or 1))
+        self.assertIsNone(self.doc_repo.get_by_id(saved.id or 1))
+        self.assertFalse(self.doc_repo.delete(9999))
 
 
 class TestContainerAndApiWithDatabase(unittest.TestCase):

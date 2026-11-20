@@ -1,6 +1,6 @@
 """FastAPI dependency injection providers for application services and settings."""
 
-from typing import Annotated
+from typing import Annotated, cast
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -8,6 +8,7 @@ from masar.application.services import (
     ActionService,
     AIService,
     ConversationService,
+    DocumentService,
     JourneyService,
     NoteService,
     ProgressService,
@@ -111,10 +112,19 @@ def get_conversation_service(request: Request) -> ConversationService:
         and request.app.state.conversation_service is not None
     ):
         return request.app.state.conversation_service  # type: ignore[no-any-return]
+    from masar.application.services.tool_registry import ServicesBundle
     from masar.container import build_conversation_service
 
     settings = get_app_settings(request)
-    service = build_conversation_service(settings=settings)
+    services_tuple = get_services(request)
+    bundle = ServicesBundle(
+        journey_service=services_tuple[0],
+        section_service=services_tuple[1],
+        topic_service=services_tuple[2],
+        note_service=services_tuple[3],
+        progress_service=services_tuple[4],
+    )
+    service = build_conversation_service(settings=settings, services_bundle=bundle)
     request.app.state.conversation_service = service
     return service
 
@@ -132,6 +142,22 @@ def get_action_service(request: Request) -> ActionService:
     service = build_action_service(settings=settings)
     request.app.state.action_service = service
     return service
+
+
+def get_document_service(request: Request) -> DocumentService:
+    """Dependency provider for DocumentService."""
+    if (
+        hasattr(request.app.state, "document_service")
+        and request.app.state.document_service is not None
+    ):
+        return cast(DocumentService, request.app.state.document_service)
+    from masar.container import build_document_service
+
+    settings = get_app_settings(request)
+    service = build_document_service(settings=settings)
+    request.app.state.document_service = service
+    return service
+
 
 
 

@@ -20,6 +20,7 @@ masar/domain/
 │   ├── ai.py                   # AI value objects (ChatMessage, AIUsage, AIResponse)
 │   ├── conversation.py         # Conversation and ConversationMessage entities
 │   ├── action.py               # ProposedAction, ActionResult, ActionProposal entities
+│   ├── document.py             # Document entity (uploaded learning materials, PDF/MD/TXT)
 │   └── __init__.py             # Re-exports of all domain models
 ├── exceptions/                 # Granular domain exception hierarchy
 │   ├── base.py                 # DomainError base class and semantic classifications
@@ -31,6 +32,7 @@ masar/domain/
 │   ├── ai.py                   # AIError, AIAuthenticationError, AIRateLimitError, AITimeoutError, etc.
 │   ├── conversation.py         # ConversationNotFound, ConversationAccessDenied, etc.
 │   ├── action.py               # UnknownToolError, ActionProposalNotFoundError, ActionExecutionError, etc.
+│   ├── document.py             # DocumentError, UnsupportedFileType, FileTooLarge, etc.
 │   ├── storage.py              # Domain-level persistence failure exceptions
 │   └── __init__.py             # Clean re-exports of all domain exceptions
 ├── types.py                    # Domain enums and type aliases (e.g., TopicStatus)
