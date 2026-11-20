@@ -18,6 +18,7 @@ masar/application/
 │   │   ├── note_repository.py
 │   │   ├── user_repository.py
 │   │   ├── conversation_repository.py
+│   │   ├── action_proposal_repository.py
 │   │   └── __init__.py
 │   ├── security/               # Security and cryptography abstractions
 │   │   ├── password_hasher.py  # ABC for password hashing and verification
@@ -37,6 +38,7 @@ masar/application/
 │   ├── token.py                # TokenResponse, TokenData
 │   ├── ai.py                   # ChatMessageSchema, CompletionRequestSchema, ChatRequestSchema, AIResponseSchema
 │   ├── conversation.py         # ConversationCreate, ConversationDetail, MessageCreate/Response
+│   ├── action.py               # ProposedAction, ActionResult, ActionProposal schemas
 │   └── __init__.py
 ├── services/                   # Application Use Cases & Workflows
 │   ├── journey_service.py      # CRUD, filtering, and ownership verification for journeys
@@ -47,6 +49,8 @@ masar/application/
 │   ├── user_service.py         # User registration, authentication, JWT token issuance
 │   ├── ai_service.py           # AI prompt & chat orchestration and domain validation
 │   ├── conversation_service.py # Multi-turn conversation workflows, persistence, and auto-titling
+│   ├── tool_registry.py        # Controlled tool catalog and execution routing
+│   ├── action_service.py       # Human-in-the-loop proposal validation, approval, and execution
 │   └── __init__.py
 ├── __init__.py                 # Top-level application re-exports
 └── AGENTS.md                   # This specification file

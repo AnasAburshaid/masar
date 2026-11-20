@@ -96,11 +96,12 @@ class TestConversationService(unittest.TestCase):
         conv = self.service.create_conversation(user_id=1)
         self.mock_ai.enqueue_response("FastAPI provides dependency injection.")
 
-        user_msg, assistant_msg = self.service.send_message(
+        user_msg, assistant_msg, proposal = self.service.send_message(
             conversation_id=conv.id or 1,
             user_id=1,
             content="How does FastAPI dependency injection work?",
         )
+        self.assertIsNone(proposal)
 
         self.assertEqual(user_msg.role, "user")
         self.assertEqual(
@@ -120,11 +121,12 @@ class TestConversationService(unittest.TestCase):
 
         # Send second message (multi-turn verification)
         self.mock_ai.enqueue_response("You use the Depends() decorator.")
-        user_msg2, assistant_msg2 = self.service.send_message(
+        user_msg2, assistant_msg2, proposal2 = self.service.send_message(
             conversation_id=conv.id or 1,
             user_id=1,
             content="What decorator is used?",
         )
+        self.assertIsNone(proposal2)
 
         self.assertEqual(user_msg2.content, "What decorator is used?")
         self.assertEqual(

@@ -4,6 +4,8 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
+from masar.application.schemas.action import ActionProposalResponseSchema
+
 
 class ConversationCreateSchema(BaseModel):
     """Schema for creating a new conversation."""
@@ -70,6 +72,7 @@ class ConversationDetailResponseSchema(ConversationResponseSchema):
     """Schema representing full conversation details including messages."""
 
     messages: list[MessageResponseSchema] = Field(default_factory=list)
+    proposals: list[ActionProposalResponseSchema] = Field(default_factory=list)
 
 
 class SendMessageResponseSchema(BaseModel):
@@ -79,3 +82,4 @@ class SendMessageResponseSchema(BaseModel):
 
     user_message: MessageResponseSchema
     assistant_message: MessageResponseSchema
+    action_proposal: Optional[ActionProposalResponseSchema] = None

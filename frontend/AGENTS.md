@@ -25,7 +25,8 @@ frontend/
 │   ├── components/             # Reusable UI components
 │   │   ├── common/             # Header, Footer, HealthWidget, ThemeToggle
 │   │   ├── layout/             # AppLayout (responsive sidebar, user profile card)
-│   │   └── auth/               # ProtectedRoute (session guard and redirection)
+│   │   ├── auth/               # ProtectedRoute (session guard and redirection)
+│   │   └── chat/               # ActionProposalCard (AI action review, approval, rejection)
 │   ├── context/                # Global React context providers
 │   │   ├── AuthContext.tsx     # Session state, JWT token storage, login/logout actions
 │   │   └── ThemeContext.tsx    # Light/Dark/System theme management with persistence
@@ -38,9 +39,11 @@ frontend/
 │   │   ├── topics.ts           # /topics CRUD and status toggles (/complete, /pending)
 │   │   ├── notes.ts            # /notes CRUD
 │   │   ├── conversations.ts    # /conversations CRUD and message submission
+│   │   ├── actions.ts          # /conversations/{id}/proposals (list, get, approve, reject)
 │   │   ├── progress.ts         # /journeys/{id}/progress & dashboard metrics aggregator
 │   │   └── health.ts           # /health and root status
 │   ├── types/                  # TypeScript interfaces (matching backend Pydantic schemas)
+│   │   ├── action.ts
 │   │   ├── auth.ts
 │   │   ├── conversation.ts
 │   │   ├── health.ts
@@ -105,3 +108,13 @@ Whenever new pages, components, or API integrations are introduced:
 - Verify responsive layout and both Light/Dark themes.
 - Run `npm test`, `npm run lint`, and `npm run build` before submitting PRs.
 - **Update this `AGENTS.md` file** whenever UI patterns, libraries, or routing paradigms evolve.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

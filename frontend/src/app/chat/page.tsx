@@ -3,7 +3,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { conversationService } from '@/services/api/conversations';
+import { actionService } from '@/services/api/actions';
 import { Conversation, ConversationDetail, ConversationMessage } from '@/types/conversation';
+import { ActionProposal } from '@/types/action';
+import { ActionProposalCard } from '@/components/chat/ActionProposalCard';
 import { ApiError } from '@/services/api/errors';
 
 const PROMPT_SUGGESTIONS = [
@@ -43,6 +46,7 @@ export default function ChatPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [activeDetail, setActiveDetail] = useState<ConversationDetail | null>(null);
+  const [proposals, setProposals] = useState<ActionProposal[]>([]);
   const [isLoadingList, setIsLoadingList] = useState(true);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -117,10 +121,14 @@ export default function ChatPage() {
       try {
         setIsLoadingDetail(true);
         setErrorBanner(null);
-        const detail = await conversationService.getConversation(activeId);
+        const [detail, fetchedProposals] = await Promise.all([
+          conversationService.getConversation(activeId),
+          actionService.listProposals(activeId).catch(() => []),
+        ]);
         if (isMounted) {
           activeDetailRef.current = detail;
           setActiveDetail(detail);
+          setProposals(fetchedProposals);
         }
       } catch (err) {
         if (isMounted) {
@@ -151,6 +159,7 @@ export default function ChatPage() {
       setConversations((prev) => [newConv, ...prev.filter((c) => c.id !== newConv.id)]);
       setActiveId(newConv.id);
       setActiveDetail(newDetail);
+      setProposals([]);
       setSidebarOpen(false);
       setTimeout(() => textareaRef.current?.focus(), 100);
     } catch (err) {
@@ -240,6 +249,13 @@ export default function ChatPage() {
         return updated;
       });
 
+      if (result.action_proposal) {
+        setProposals((prev) => [
+          result.action_proposal!,
+          ...prev.filter((p) => p.id !== result.action_proposal!.id),
+        ]);
+      }
+
       // Update title in sidebar list if changed
       const updatedList = await conversationService.listConversations();
       setConversations(updatedList);
@@ -259,6 +275,32 @@ export default function ChatPage() {
     } finally {
       setIsSending(false);
       setTimeout(() => textareaRef.current?.focus(), 50);
+    }
+  };
+
+  const handleApproveProposal = async (proposalId: number) => {
+    if (!activeId) return;
+    try {
+      setErrorBanner(null);
+      const response = await actionService.approveProposal(activeId, proposalId);
+      setProposals((prev) =>
+        prev.map((p) => (p.id === proposalId ? response.proposal : p))
+      );
+    } catch (err) {
+      setErrorBanner(getErrorMessage(err, 'Failed to approve action proposal.'));
+    }
+  };
+
+  const handleRejectProposal = async (proposalId: number) => {
+    if (!activeId) return;
+    try {
+      setErrorBanner(null);
+      const updated = await actionService.rejectProposal(activeId, proposalId);
+      setProposals((prev) =>
+        prev.map((p) => (p.id === proposalId ? updated : p))
+      );
+    } catch (err) {
+      setErrorBanner(getErrorMessage(err, 'Failed to reject action proposal.'));
     }
   };
 
@@ -473,6 +515,23 @@ export default function ChatPage() {
                     </div>
                   );
                 })
+              )}
+
+              {/* Action Proposals for this conversation */}
+              {proposals.length > 0 && (
+                <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800/60">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <span>⚡ Action Proposals ({proposals.length})</span>
+                  </div>
+                  {proposals.map((proposal) => (
+                    <ActionProposalCard
+                      key={proposal.id}
+                      proposal={proposal}
+                      onApprove={handleApproveProposal}
+                      onReject={handleRejectProposal}
+                    />
+                  ))}
+                </div>
               )}
 
               {/* Sending / Thinking Indicator */}

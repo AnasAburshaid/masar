@@ -1,5 +1,12 @@
 """Application schemas package for input validation, serialization, and storage validation."""
 
+from masar.application.schemas.action import (
+    ActionApprovalResponseSchema,
+    ActionProposalCreateSchema,
+    ActionProposalResponseSchema,
+    ActionResultSchema,
+    ProposedActionSchema,
+)
 from masar.application.schemas.ai import (
     AIResponseSchema,
     AIUsageSchema,
@@ -58,6 +65,12 @@ from masar.application.schemas.user import (
 )
 
 __all__ = [
+    # Action & Proposals
+    "ActionApprovalResponseSchema",
+    "ActionProposalCreateSchema",
+    "ActionProposalResponseSchema",
+    "ActionResultSchema",
+    "ProposedActionSchema",
     # AI
     "AIResponseSchema",
     "AIUsageSchema",

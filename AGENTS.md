@@ -33,12 +33,12 @@ Use the following conceptual layers and directory organization, each governed by
 
 1. **Domain Layer (`masar/domain/`)** — See [masar/domain/AGENTS.md](masar/domain/AGENTS.md)
    - Core business entities, models, and domain rules.
-   - Domain models are separated into individual files (`domain/models/journey.py`, `domain/models/section.py`, `domain/models/topic.py`, `domain/models/note.py`, `domain/models/progress.py`, `domain/models/user.py`, `domain/models/ai.py`, `domain/models/conversation.py`).
-   - Domain exceptions are organized separately under `domain/exceptions/` (`base.py`, `journey.py`, `section.py`, `topic.py`, `note.py`, `user.py`, `ai.py`, `conversation.py`, `storage.py`).
+   - Domain models are separated into individual files (`domain/models/journey.py`, `domain/models/section.py`, `domain/models/topic.py`, `domain/models/note.py`, `domain/models/progress.py`, `domain/models/user.py`, `domain/models/ai.py`, `domain/models/conversation.py`, `domain/models/action.py`).
+   - Domain exceptions are organized separately under `domain/exceptions/` (`base.py`, `journey.py`, `section.py`, `topic.py`, `note.py`, `user.py`, `ai.py`, `conversation.py`, `action.py`, `storage.py`).
    - **Rule:** Domain must not depend on Application, Infrastructure, Presentation, or Frontend.
 
 2. **Application Layer (`masar/application/`)** — See [masar/application/AGENTS.md](masar/application/AGENTS.md)
-   - Application services and use cases organized into individual files (`journey_service.py`, `section_service.py`, `topic_service.py`, `note_service.py`, `progress_service.py`, `user_service.py`, `ai_service.py`, `conversation_service.py`).
+   - Application services and use cases organized into individual files (`journey_service.py`, `section_service.py`, `topic_service.py`, `note_service.py`, `progress_service.py`, `user_service.py`, `ai_service.py`, `conversation_service.py`, `action_service.py`, `tool_registry.py`).
    - Repository abstractions defined in `application/interfaces/repositories/`, security in `application/interfaces/security/`, and AI provider in `application/interfaces/ai/`.
    - Pydantic v2 DTO validation schemas defined in `application/schemas/`.
    - **Rule:** Application depends on Domain and abstract interfaces. Application must NOT import or depend on concrete Infrastructure or Presentation implementations.
@@ -63,6 +63,7 @@ Use the following conceptual layers and directory organization, each governed by
    - Next.js 16 (App Router with Turbopack), React 19, and Tailwind CSS v4 web application.
    - Dual-theme system (Light & Dark mode) with `ThemeContext` and `localStorage` persistence.
    - Typed API client services consuming the FastAPI backend with Bearer token authentication.
+   - Interactive AI action proposals (`ActionProposalCard`) allowing users to review, approve, or reject AI-recommended changes before execution.
    - **Rule:** Backend REST API is the single source of truth. UI never bypasses backend business rules or validation.
 
 6. **Composition Root & Dependency Injection (`masar/container.py`, `masar/presentation/api/dependencies.py`)**

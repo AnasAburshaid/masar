@@ -1,5 +1,8 @@
 """SQLAlchemy database repository implementations."""
 
+from masar.infrastructure.repositories.database.action_proposal_repository import (
+    SqlActionProposalRepository,
+)
 from masar.infrastructure.repositories.database.conversation_repository import (
     SqlConversationRepository,
 )
@@ -10,6 +13,7 @@ from masar.infrastructure.repositories.database.topic_repository import SqlTopic
 from masar.infrastructure.repositories.database.user_repository import SqlUserRepository
 
 __all__ = [
+    "SqlActionProposalRepository",
     "SqlConversationRepository",
     "SqlJourneyRepository",
     "SqlSectionRepository",

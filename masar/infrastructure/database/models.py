@@ -1,7 +1,7 @@
 """SQLAlchemy ORM models representing database persistence entities."""
 
 from datetime import datetime, timezone
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from masar.infrastructure.database.session import Base
@@ -164,6 +164,12 @@ class ConversationModel(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
+    proposals: Mapped[list["ActionProposalModel"]] = relationship(
+        "ActionProposalModel",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
 
 class ConversationMessageModel(Base):
@@ -188,5 +194,42 @@ class ConversationMessageModel(Base):
 
     conversation: Mapped[ConversationModel] = relationship(
         "ConversationModel", back_populates="messages"
+    )
+
+
+class ActionProposalModel(Base):
+    """Database model for AI-generated action proposals."""
+
+    __tablename__ = "action_proposals"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="pending", nullable=False)
+    actions_json: Mapped[str] = mapped_column(Text, nullable=False)
+    results_json: Mapped[str] = mapped_column(Text, default="[]", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+    resolved_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    conversation: Mapped[ConversationModel] = relationship(
+        "ConversationModel", back_populates="proposals"
     )
 

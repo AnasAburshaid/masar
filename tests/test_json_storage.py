@@ -22,11 +22,12 @@ class TestJsonStorage(unittest.TestCase):
 
     def test_load_nonexistent_file_returns_empty_structure(self) -> None:
         data = self.storage.load()
-        self.assertEqual(data, {"journeys": [], "sections": [], "topics": [], "notes": []})
+        self.assertEqual(data, {"users": [], "journeys": [], "sections": [], "topics": [], "notes": []})
         self.assertFalse(self.file_path.exists())
 
     def test_save_and_load_roundtrip(self) -> None:
         sample_data = {
+            "users": [],
             "journeys": [{"id": 1, "title": "Python", "description": "Basics", "created_at": "2026-11-18T20:00:00+00:00"}],
             "sections": [{"id": 1, "journey_id": 1, "title": "Intro"}],
             "topics": [{"id": 1, "section_id": 1, "title": "Variables", "is_completed": False}],

@@ -201,14 +201,14 @@ MASAR_AI_TEMPERATURE=0.7
 ```
 
 #### Architecture Components:
-- **Domain Layer (`masar.domain.models.ai`, `masar.domain.models.conversation`, `masar.domain.exceptions.ai`, `masar.domain.exceptions.conversation`)**: Core dataclasses (`ChatMessage`, `AIUsage`, `AIResponse`, `Conversation`, `ConversationMessage`) and structured domain exceptions (`AIAuthenticationError`, `ConversationNotFoundError`, `ConversationAccessDeniedError`, etc.).
-- **Application Layer (`masar.application.interfaces.ai`, `masar.application.interfaces.repositories.conversation_repository`, `masar.application.services.ai_service`, `masar.application.services.conversation_service`)**: `AIProvider` interface contract, `ConversationRepository` contract, `AIService` orchestrator, and `ConversationService` coordinating multi-turn dialogues, auto-titling, and context assembly.
-- **Infrastructure Layer (`masar.infrastructure.ai`, `masar.infrastructure.repositories.database.conversation_repository`, `masar.infrastructure.repositories.in_memory.conversation_repository`)**:
+- **Domain Layer (`masar.domain.models.ai`, `masar.domain.models.conversation`, `masar.domain.models.action`, `masar.domain.exceptions.ai`, `masar.domain.exceptions.conversation`, `masar.domain.exceptions.action`)**: Core dataclasses (`ChatMessage`, `AIUsage`, `AIResponse`, `Conversation`, `ConversationMessage`, `ProposedAction`, `ActionResult`, `ActionProposal`) and structured domain exceptions.
+- **Application Layer (`masar.application.interfaces.ai`, `masar.application.interfaces.repositories.conversation_repository`, `masar.application.interfaces.repositories.action_proposal_repository`, `masar.application.services.ai_service`, `masar.application.services.conversation_service`, `masar.application.services.action_service`, `masar.application.services.tool_registry`)**: `AIProvider` interface contract, `ConversationRepository` and `ActionProposalRepository` contracts, `ToolRegistry` managing 21 validated tools across application services, and `ActionService` executing multi-step action plans with dynamic reference resolution (`$0.id`, `$prev.id`).
+- **Infrastructure Layer (`masar.infrastructure.ai`, `masar.infrastructure.repositories.database.conversation_repository`, `masar.infrastructure.repositories.database.action_proposal_repository`, `masar.infrastructure.repositories.in_memory.*`)**:
   - `OpenRouterProvider`: Production-grade HTTP client with error mapping and retry/timeout handling.
   - `MockAIProvider`: Zero-network test provider supporting queued mock responses, call recording, and error injection.
-  - `SqlConversationRepository` & `InMemoryConversationRepository`: Persistent multi-turn dialogue storage with cascading deletes.
-- **Presentation Layer (`masar.presentation.api.routes.conversations`)**: RESTful conversation endpoints (`/conversations`, `/conversations/{id}`, `/conversations/{id}/messages`).
-- **Frontend Layer (`/chat`)**: Multi-turn conversation web experience with prompt suggestion cards, sidebar history management, optimistic UI updates, and responsive layouts.
+  - `SqlConversationRepository` & `SqlActionProposalRepository`: Persistent multi-turn dialogue and action proposal storage with cascading foreign keys.
+- **Presentation Layer (`masar.presentation.api.routes.conversations`)**: RESTful endpoints for conversations, messages, and action proposals (`/conversations/{id}/proposals/{proposal_id}/approve`, `/reject`).
+- **Frontend Layer (`/chat`)**: Multi-turn conversation web experience with prompt suggestions, interactive `ActionProposalCard` with operation previews, destructive operation warnings, and human-in-the-loop Approve & Reject workflows.
 
 
 ---

@@ -4,6 +4,7 @@ from pathlib import Path
 
 from masar.application.interfaces.ai import AIProvider
 from masar.application.interfaces.repositories import (
+    ActionProposalRepository,
     ConversationRepository,
     JourneyRepository,
     NoteRepository,
@@ -12,12 +13,15 @@ from masar.application.interfaces.repositories import (
     UserRepository,
 )
 from masar.application.services import (
+    ActionService,
     AIService,
     ConversationService,
     JourneyService,
     NoteService,
     ProgressService,
     SectionService,
+    ServicesBundle,
+    ToolRegistry,
     TopicService,
     UserService,
 )
@@ -157,6 +161,7 @@ def build_cli(
 
 def build_user_service(
     storage_type: str | None = None,
+    data_file: str | Path | None = None,
     database_url: str | None = None,
     settings: Settings | None = None,
 ) -> UserService:
@@ -176,7 +181,12 @@ def build_user_service(
         session_factory = get_session_factory(resolved_db_url)
         db_session = session_factory()
         user_repo = SqlUserRepository(db_session)
-    elif resolved_storage in ("in_memory", "json"):
+    elif resolved_storage == "json":
+        from masar.infrastructure.repositories.json.user_repository import JsonUserRepository
+
+        resolved_data_file = data_file if data_file is not None else active_settings.data_file
+        user_repo = JsonUserRepository(resolved_data_file)
+    elif resolved_storage == "in_memory":
         from masar.infrastructure.repositories.in_memory.user_repository import InMemoryUserRepository
 
         user_repo = InMemoryUserRepository()
@@ -244,21 +254,100 @@ def build_ai_service(
     return AIService(ai_provider=ai_provider)
 
 
+def build_action_service(
+    storage_type: str | None = None,
+    database_url: str | None = None,
+    settings: Settings | None = None,
+    services_bundle: ServicesBundle | None = None,
+    action_proposal_repository: ActionProposalRepository | None = None,
+    tool_registry: ToolRegistry | None = None,
+) -> ActionService:
+    """Instantiate and wire up ActionProposalRepository, ToolRegistry, and ActionService."""
+    active_settings = settings or get_settings()
+
+    resolved_bundle: ServicesBundle
+    if services_bundle is not None:
+        resolved_bundle = services_bundle
+    else:
+        services = build_container(
+            storage_type=storage_type,
+            database_url=database_url,
+            settings=active_settings,
+        )
+        resolved_bundle = ServicesBundle(
+            journey_service=services[0],
+            section_service=services[1],
+            topic_service=services[2],
+            note_service=services[3],
+            progress_service=services[4],
+        )
+
+    resolved_registry = tool_registry or ToolRegistry()
+
+    if action_proposal_repository is not None:
+        return ActionService(
+            proposal_repository=action_proposal_repository,
+            tool_registry=resolved_registry,
+            services_bundle=resolved_bundle,
+        )
+
+    resolved_storage = (
+        storage_type if storage_type is not None else active_settings.storage_type
+    )
+
+    proposal_repo: ActionProposalRepository
+    if resolved_storage in ("database", "postgres"):
+        from masar.infrastructure.database.session import Base, get_engine, get_session_factory
+        from masar.infrastructure.repositories.database.action_proposal_repository import (
+            SqlActionProposalRepository,
+        )
+
+        resolved_db_url = (
+            database_url if database_url is not None else active_settings.database_url
+        )
+        engine = get_engine(resolved_db_url)
+        Base.metadata.create_all(bind=engine)
+        session_factory = get_session_factory(resolved_db_url)
+        db_session = session_factory()
+        proposal_repo = SqlActionProposalRepository(db_session)
+    elif resolved_storage in ("in_memory", "json"):
+        from masar.infrastructure.repositories.in_memory.action_proposal_repository import (
+            InMemoryActionProposalRepository,
+        )
+
+        proposal_repo = InMemoryActionProposalRepository()
+    else:
+        raise ValueError(f"Unknown storage type: {resolved_storage}")
+
+    return ActionService(
+        proposal_repository=proposal_repo,
+        tool_registry=resolved_registry,
+        services_bundle=resolved_bundle,
+    )
+
+
 def build_conversation_service(
     storage_type: str | None = None,
     database_url: str | None = None,
     settings: Settings | None = None,
     ai_service: AIService | None = None,
     conversation_repository: ConversationRepository | None = None,
+    action_service: ActionService | None = None,
 ) -> ConversationService:
-    """Instantiate and wire up ConversationRepository, AIService, and ConversationService."""
+    """Instantiate and wire up ConversationRepository, AIService, ActionService, and ConversationService."""
     active_settings = settings or get_settings()
     resolved_ai = ai_service or build_ai_service(settings=active_settings)
+    resolved_action_service = action_service or build_action_service(
+        storage_type=storage_type,
+        database_url=database_url,
+        settings=active_settings,
+    )
 
     if conversation_repository is not None:
         return ConversationService(
             conversation_repository=conversation_repository,
             ai_service=resolved_ai,
+            action_service=resolved_action_service,
         )
 
     resolved_storage = (
@@ -292,6 +381,7 @@ def build_conversation_service(
     return ConversationService(
         conversation_repository=conv_repo,
         ai_service=resolved_ai,
+        action_service=resolved_action_service,
     )
 
 

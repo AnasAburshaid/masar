@@ -1,17 +1,21 @@
 """Conversation service orchestrating multi-turn dialogues with Masar AI."""
 
+import json
+import re
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 from masar.application.interfaces.repositories.conversation_repository import (
     ConversationRepository,
 )
+from masar.application.services.action_service import ActionService
 from masar.application.services.ai_service import AIService
 from masar.domain.exceptions.base import EmptyFieldError, InvalidIdError
 from masar.domain.exceptions.conversation import (
     ConversationAccessDeniedError,
     ConversationNotFoundError,
 )
+from masar.domain.models.action import ActionProposal, ProposedAction
 from masar.domain.models.ai import ChatMessage
 from masar.domain.models.conversation import Conversation, ConversationMessage
 
@@ -19,7 +23,30 @@ DEFAULT_SYSTEM_PROMPT = (
     "You are Masar AI, an expert technical learning mentor and engineering advisor. "
     "Your mission is to help software engineers navigate complex domains, break down subjects into "
     "structured learning roadmaps, clarify conceptual doubts, and track practical progress. "
-    "Be direct, insightful, and encourage structured, deliberate practice."
+    "Be direct, insightful, and encourage structured, deliberate practice.\n\n"
+    "When a user asks you to create, modify, or manage their learning journeys, sections, topics, or notes, "
+    "you can propose concrete application actions. Append a structured JSON block to your response in the exact format:\n"
+    "```json\n"
+    "{\n"
+    '  "action_proposal": {\n'
+    '    "title": "<Short descriptive title of the proposal>",\n'
+    '    "actions": [\n'
+    '      {\n'
+    '        "tool": "<tool_name>",\n'
+    '        "description": "<What this action accomplishes>",\n'
+    '        "parameters": { ... }\n'
+    '      }\n'
+    '    ]\n'
+    '  }\n'
+    "}\n"
+    "```\n"
+    "Available tools include: create_journey(title, description), update_journey(journey_id, title, description), "
+    "delete_journey(journey_id), create_section(journey_id, title), update_section(section_id, title), "
+    "delete_section(section_id), create_topic(section_id, title), update_topic(topic_id, title), "
+    "complete_topic(topic_id), pending_topic(topic_id), delete_topic(topic_id), create_note(topic_id, content), "
+    "update_note(note_id, content), delete_note(note_id), get_journey_progress(journey_id), get_section_progress(section_id).\n"
+    "You can chain actions by referencing outputs from prior steps using '$<index>.id' (e.g., '$0.id' or '$prev.id').\n"
+    "Always provide a helpful message explaining what you planned alongside the JSON block."
 )
 
 
@@ -31,10 +58,12 @@ class ConversationService:
         conversation_repository: ConversationRepository,
         ai_service: AIService,
         system_prompt: str = DEFAULT_SYSTEM_PROMPT,
+        action_service: Optional[ActionService] = None,
     ) -> None:
         self._repo = conversation_repository
         self._ai = ai_service
         self._system_prompt = system_prompt
+        self._action_service = action_service
 
     def create_conversation(
         self, user_id: int, title: Optional[str] = None
@@ -76,7 +105,7 @@ class ConversationService:
 
     def send_message(
         self, conversation_id: int, user_id: int, content: str
-    ) -> tuple[ConversationMessage, ConversationMessage]:
+    ) -> tuple[ConversationMessage, ConversationMessage, Optional[ActionProposal]]:
         """Record user message, dispatch multi-turn dialogue to AI, and persist response."""
         conv = self._verify_ownership(conversation_id, user_id)
 
@@ -112,19 +141,74 @@ class ConversationService:
         # 5. Call AI Service
         ai_response = self._ai.chat(messages=dialogue)
 
-        # 6. Persist assistant reply
+        # 6. Extract any action proposals embedded in the AI response
+        cleaned_content, proposal_data = self._extract_action_proposal(ai_response.content)
+
+        proposal: Optional[ActionProposal] = None
+        if proposal_data and self._action_service is not None:
+            raw_actions = proposal_data.get("actions", [])
+            proposed_actions = [
+                ProposedAction(
+                    tool=a["tool"],
+                    parameters=a.get("parameters", {}),
+                    description=a.get("description", ""),
+                    is_destructive=bool(a.get("is_destructive", False)),
+                )
+                for a in raw_actions
+                if isinstance(a, dict) and "tool" in a
+            ]
+            if proposed_actions:
+                proposal = self._action_service.create_proposal(
+                    conversation_id=conversation_id,
+                    user_id=user_id,
+                    title=proposal_data.get("title", "Proposed Actions"),
+                    actions=proposed_actions,
+                )
+
+        # 7. Persist assistant reply
         assistant_msg = ConversationMessage(
             conversation_id=conversation_id,
             role="assistant",
-            content=ai_response.content,
+            content=cleaned_content,
         )
         saved_assistant_msg = self._repo.add_message(assistant_msg)
 
-        # 7. Bump conversation updated_at
+        # 8. Bump conversation updated_at
         conv.updated_at = datetime.now(timezone.utc)
         self._repo.update_conversation(conv)
 
-        return saved_user_msg, saved_assistant_msg
+        return saved_user_msg, saved_assistant_msg, proposal
+
+    def _extract_action_proposal(self, content: str) -> tuple[str, Optional[dict[str, Any]]]:
+        """Extract JSON action_proposal block from response content if present."""
+        # Search for ```json ... ``` or ``` ... ``` containing "action_proposal"
+        code_block_pattern = r"```(?:json)?\s*(\{\s*\"action_proposal\"[\s\S]*?\})\s*```"
+        match = re.search(code_block_pattern, content)
+        if match:
+            raw_json = match.group(1)
+            try:
+                parsed = json.loads(raw_json)
+                if isinstance(parsed, dict) and "action_proposal" in parsed:
+                    # Clean out code block from text so user sees clear narrative message
+                    cleaned = re.sub(code_block_pattern, "", content).strip()
+                    return cleaned, parsed["action_proposal"]
+            except json.JSONDecodeError:
+                pass
+
+        # Also search for standalone JSON object with action_proposal
+        raw_json_pattern = r"(\{\s*\"action_proposal\"\s*:\s*\{[\s\S]*?\}\s*\})"
+        match_raw = re.search(raw_json_pattern, content)
+        if match_raw:
+            raw_json = match_raw.group(1)
+            try:
+                parsed = json.loads(raw_json)
+                if isinstance(parsed, dict) and "action_proposal" in parsed:
+                    cleaned = re.sub(raw_json_pattern, "", content).strip()
+                    return cleaned, parsed["action_proposal"]
+            except json.JSONDecodeError:
+                pass
+
+        return content, None
 
     def _verify_ownership(self, conversation_id: int, user_id: int) -> Conversation:
         """Ensure the conversation exists and belongs to the requested user."""
