@@ -8,10 +8,12 @@ from masar.infrastructure.repositories.json.section_repository import (
     JsonSectionRepository,
 )
 from masar.infrastructure.repositories.json.topic_repository import JsonTopicRepository
+from masar.infrastructure.repositories.json.user_repository import JsonUserRepository
 
 __all__ = [
     "JsonJourneyRepository",
     "JsonNoteRepository",
     "JsonSectionRepository",
     "JsonTopicRepository",
+    "JsonUserRepository",
 ]

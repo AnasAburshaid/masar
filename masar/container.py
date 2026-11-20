@@ -161,6 +161,7 @@ def build_cli(
 
 def build_user_service(
     storage_type: str | None = None,
+    data_file: str | Path | None = None,
     database_url: str | None = None,
     settings: Settings | None = None,
 ) -> UserService:
@@ -180,7 +181,12 @@ def build_user_service(
         session_factory = get_session_factory(resolved_db_url)
         db_session = session_factory()
         user_repo = SqlUserRepository(db_session)
-    elif resolved_storage in ("in_memory", "json"):
+    elif resolved_storage == "json":
+        from masar.infrastructure.repositories.json.user_repository import JsonUserRepository
+
+        resolved_data_file = data_file if data_file is not None else active_settings.data_file
+        user_repo = JsonUserRepository(resolved_data_file)
+    elif resolved_storage == "in_memory":
         from masar.infrastructure.repositories.in_memory.user_repository import InMemoryUserRepository
 
         user_repo = InMemoryUserRepository()

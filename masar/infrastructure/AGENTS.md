@@ -26,7 +26,7 @@ masar/infrastructure/
 │   │   └── __init__.py
 │   ├── in_memory/              # In-memory dictionaries for testing and rapid verification
 │   │   └── ...
-│   ├── json/                   # JSON file-based repository adapter
+│   ├── json/                   # JSON file-based repository adapter (journeys, sections, topics, notes, users)
 │   │   └── ...
 │   └── __init__.py
 ├── security/                   # Concrete cryptographic implementations

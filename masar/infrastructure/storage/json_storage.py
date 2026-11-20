@@ -16,6 +16,7 @@ from masar.domain.exceptions import (
 )
 
 DEFAULT_SCHEMA: dict[str, list[dict[str, Any]]] = {
+    "users": [],
     "journeys": [],
     "sections": [],
     "topics": [],

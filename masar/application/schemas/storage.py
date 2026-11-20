@@ -52,11 +52,22 @@ class StorageNoteRecord(StorageRecordBase):
     updated_at: str | None = Field(default=None)
 
 
+class StorageUserRecord(StorageRecordBase):
+    """Schema validating a persisted User record."""
+
+    id: int = Field(..., gt=0, description="Unique positive user ID")
+    email: str = Field(..., min_length=3, max_length=255)
+    hashed_password: str = Field(..., min_length=1)
+    is_active: bool = Field(default=True)
+    created_at: str | None = Field(default=None)
+
+
 class StorageDataSchema(BaseModel):
     """Schema validating the full top-level JSON storage structure."""
 
     model_config = ConfigDict(extra="allow")
 
+    users: list[StorageUserRecord] = Field(default_factory=list)
     journeys: list[StorageJourneyRecord] = Field(default_factory=list)
     sections: list[StorageSectionRecord] = Field(default_factory=list)
     topics: list[StorageTopicRecord] = Field(default_factory=list)

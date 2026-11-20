@@ -9,13 +9,15 @@ from masar.domain.exceptions import (
     NoteNotFoundError,
     SectionNotFoundError,
     TopicNotFoundError,
+    UserAlreadyExistsError,
 )
-from masar.domain.models import Journey, Note, Section, Topic
+from masar.domain.models import Journey, Note, Section, Topic, User
 from masar.infrastructure.repositories.json import (
     JsonJourneyRepository,
     JsonNoteRepository,
     JsonSectionRepository,
     JsonTopicRepository,
+    JsonUserRepository,
 )
 from masar.infrastructure.storage.json_storage import JsonStorage
 
@@ -31,6 +33,7 @@ class TestJsonRepositories(unittest.TestCase):
         self.section_repo = JsonSectionRepository(self.storage)
         self.topic_repo = JsonTopicRepository(self.storage)
         self.note_repo = JsonNoteRepository(self.storage)
+        self.user_repo = JsonUserRepository(self.storage)
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
@@ -155,6 +158,43 @@ class TestJsonRepositories(unittest.TestCase):
         # Update nonexistent raises
         with self.assertRaises(NoteNotFoundError):
             restarted_repo.update(n1)
+
+    def test_user_repository_crud_and_persistence(self) -> None:
+        user1 = User(email="Alice@Example.com", hashed_password="pbkdf2:sha256:hash1")
+        added = self.user_repo.add(user1)
+        self.assertEqual(added.id, 1)
+
+        # Case-insensitive lookup
+        found = self.user_repo.get_by_email("alice@example.com")
+        self.assertIsNotNone(found)
+        self.assertEqual(found.email, "alice@example.com")
+        self.assertEqual(found.hashed_password, "pbkdf2:sha256:hash1")
+
+        # Duplicate email raises
+        dup = User(email="alice@example.com", hashed_password="pbkdf2:sha256:hash2")
+        with self.assertRaises(UserAlreadyExistsError):
+            self.user_repo.add(dup)
+
+        # Persistence across restart
+        new_storage = JsonStorage(self.file_path)
+        restarted_repo = JsonUserRepository(new_storage)
+        survived = restarted_repo.get_by_id(1)
+        self.assertIsNotNone(survived)
+        self.assertEqual(survived.hashed_password, "pbkdf2:sha256:hash1")
+
+        # Second user auto-increments
+        user2 = User(email="bob@example.com", hashed_password="pbkdf2:sha256:hash2")
+        added2 = restarted_repo.add(user2)
+        self.assertEqual(added2.id, 2)
+
+        # Get all
+        all_users = restarted_repo.get_all()
+        self.assertEqual(len(all_users), 2)
+
+        # Delete
+        self.assertTrue(restarted_repo.delete(1))
+        self.assertIsNone(restarted_repo.get_by_id(1))
+        self.assertFalse(restarted_repo.delete(999))
 
 
 if __name__ == "__main__":
