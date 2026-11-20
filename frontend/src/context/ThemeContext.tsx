@@ -14,18 +14,23 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const THEME_STORAGE_KEY = 'masar_theme_preference';
+export const THEME_STORAGE_KEY = 'masar_theme_preference';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('dark');
+  const [theme, setThemeState] = useState<Theme>('system');
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>('dark');
 
   const applyThemeToDocument = useCallback((effectiveTheme: ResolvedTheme) => {
+    if (typeof document === 'undefined') return;
     const root = document.documentElement;
     if (effectiveTheme === 'dark') {
       root.classList.add('dark');
+      root.style.colorScheme = 'dark';
+      root.setAttribute('data-theme', 'dark');
     } else {
       root.classList.remove('dark');
+      root.style.colorScheme = 'light';
+      root.setAttribute('data-theme', 'light');
     }
   }, []);
 
@@ -59,19 +64,23 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [resolvedTheme, setTheme]);
 
   useEffect(() => {
-    queueMicrotask(() => {
-      let saved: Theme | null = null;
-      try {
-        saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-      } catch {
-        // Storage might be disabled
-      }
+    let saved: Theme | null = null;
+    try {
+      saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
+    } catch {
+      // Storage might be disabled
+    }
 
-      const initialTheme: Theme = saved && ['light', 'dark', 'system'].includes(saved) ? saved : 'system';
+    const initialTheme: Theme = saved && ['light', 'dark', 'system'].includes(saved) ? saved : 'system';
+    const effective = resolveTheme(initialTheme);
+
+    // Apply to document immediately
+    applyThemeToDocument(effective);
+
+    // Queue state update to avoid cascading re-render warnings
+    queueMicrotask(() => {
       setThemeState(initialTheme);
-      const effective = resolveTheme(initialTheme);
       setResolvedTheme(effective);
-      applyThemeToDocument(effective);
     });
 
     // Media query listener for system theme changes

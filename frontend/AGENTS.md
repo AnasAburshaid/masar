@@ -14,7 +14,7 @@ frontend/
 │   ├── app/                    # Next.js 16 App Router pages and route handlers
 │   │   ├── page.tsx            # Landing page (hero, value pillars, backend health widget)
 │   │   ├── layout.tsx          # RootLayout (Geist fonts, ThemeProvider, AuthProvider)
-│   │   ├── globals.css         # Tailwind v4 import, @custom-variant dark, CSS tokens
+│   │   ├── globals.css         # Tailwind v4 import, @variant dark override, CSS tokens
 │   │   ├── login/page.tsx      # Sign-in page with SaaS split-screen layout
 │   │   ├── register/page.tsx   # Sign-up page with live validation & auto-login
 │   │   ├── dashboard/page.tsx  # Progress dashboard, KPI grid, roadmap distribution meter
@@ -88,7 +88,7 @@ frontend/
 
 - **Next.js 16.4+:** React framework with App Router, Turbopack, and Partial Prerendering.
 - **React 19.3+:** Modern component runtime with `use()`, `Suspense`, and strict concurrency guards.
-- **Tailwind CSS v4:** Zero-configuration CSS engine with custom `@custom-variant dark`.
+- **Tailwind CSS v4:** Zero-configuration CSS engine with custom selector variant `@variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));`.
 - **Node.js Test Runner (`tsx --test`):** Automated unit tests for API services and progress aggregators.
 - **ESLint 9:** Code quality enforcement using `eslint-config-next`.
 
