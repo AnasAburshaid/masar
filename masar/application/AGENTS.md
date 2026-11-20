@@ -48,7 +48,7 @@ masar/application/
 │   ├── progress_service.py     # Aggregated progress calculations across roadmaps
 │   ├── user_service.py         # User registration, authentication, JWT token issuance
 │   ├── ai_service.py           # AI prompt & chat orchestration and domain validation
-│   ├── conversation_service.py # Multi-turn conversation workflows, persistence, and auto-titling
+│   ├── conversation_service.py # Personal mentor workflows, clarifying inquiries, auto-titling, and balanced proposal parsing
 │   ├── tool_registry.py        # Controlled tool catalog and execution routing
 │   ├── action_service.py       # Human-in-the-loop proposal validation, approval, and execution
 │   └── __init__.py

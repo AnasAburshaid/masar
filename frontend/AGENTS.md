@@ -26,7 +26,7 @@ frontend/
 │   │   ├── common/             # Header, Footer, HealthWidget, ThemeToggle
 │   │   ├── layout/             # AppLayout (responsive sidebar, user profile card)
 │   │   ├── auth/               # ProtectedRoute (session guard and redirection)
-│   │   └── chat/               # ActionProposalCard (AI action review, approval, rejection)
+│   │   └── chat/               # MarkdownRenderer (syntax highlighting, copy) & ActionProposalCard (curriculum trees)
 │   ├── context/                # Global React context providers
 │   │   ├── AuthContext.tsx     # Session state, JWT token storage, login/logout actions
 │   │   └── ThemeContext.tsx    # Light/Dark/System theme management with persistence
