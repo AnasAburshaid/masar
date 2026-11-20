@@ -29,39 +29,62 @@ The project must follow a well-organized, layered architecture inspired by profe
 
 ### Initial Architectural Direction
 
-Use the following conceptual layers and directory organization:
+Use the following conceptual layers and directory organization, each governed by its own detailed `AGENTS.md` specification:
 
-1. **Domain Layer (`masar/domain/`)**
+1. **Domain Layer (`masar/domain/`)** — See [masar/domain/AGENTS.md](masar/domain/AGENTS.md)
    - Core business entities, models, and domain rules.
-   - Domain models are separated into individual files (`domain/models/journey.py`, `domain/models/section.py`, `domain/models/topic.py`).
-   - Domain exceptions are organized separately under `domain/exceptions/` (`base.py`, `journey.py`, `section.py`, `topic.py`).
-   - **Rule:** Domain must not depend on Application, Infrastructure, or Presentation.
+   - Domain models are separated into individual files (`domain/models/journey.py`, `domain/models/section.py`, `domain/models/topic.py`, `domain/models/note.py`, `domain/models/progress.py`, `domain/models/user.py`).
+   - Domain exceptions are organized separately under `domain/exceptions/` (`base.py`, `journey.py`, `section.py`, `topic.py`, `note.py`, `user.py`, `storage.py`).
+   - **Rule:** Domain must not depend on Application, Infrastructure, Presentation, or Frontend.
 
-2. **Application Layer (`masar/application/`)**
-   - Application services and use cases organized into individual files (`application/services/journey_service.py`, `application/services/section_service.py`, `application/services/topic_service.py`).
-   - Repository abstractions (interfaces/abstract base classes) defined in `application/interfaces/repositories/` (`journey_repository.py`, `section_repository.py`, `topic_repository.py`).
-   - **Rule:** Application depends on Domain and repository abstractions. Application must NOT import or depend on concrete Infrastructure implementations.
+2. **Application Layer (`masar/application/`)** — See [masar/application/AGENTS.md](masar/application/AGENTS.md)
+   - Application services and use cases organized into individual files (`journey_service.py`, `section_service.py`, `topic_service.py`, `note_service.py`, `progress_service.py`, `user_service.py`).
+   - Repository abstractions (interfaces/abstract base classes) defined in `application/interfaces/repositories/` and security abstractions in `application/interfaces/security/`.
+   - Pydantic v2 DTO validation schemas defined in `application/schemas/`.
+   - **Rule:** Application depends on Domain and abstract interfaces. Application must NOT import or depend on concrete Infrastructure or Presentation implementations.
 
-3. **Infrastructure Layer (`masar/infrastructure/`)**
-   - Implements repository abstractions defined in the Application layer.
-   - Implementations are organized by technology (`infrastructure/repositories/in_memory/`, and later database/file adapters).
-   - **Rule:** Infrastructure may depend on Application interfaces and Domain models, but never on Presentation.
+3. **Infrastructure Layer (`masar/infrastructure/`)** — See [masar/infrastructure/AGENTS.md](masar/infrastructure/AGENTS.md)
+   - Implements repository and security abstractions defined in the Application layer.
+   - Implementations are organized by technology:
+     - Relational Database & SQLAlchemy 2.0 ORM (`infrastructure/database/`, `infrastructure/repositories/database/`).
+     - Cryptography & Auth (`infrastructure/security/password.py` for PBKDF2, `infrastructure/security/jwt_token.py` for PyJWT).
+     - File storage adapters (`infrastructure/storage/json_storage.py`, `infrastructure/repositories/json/`).
+     - In-memory testing adapters (`infrastructure/repositories/in_memory/`).
+   - **Rule:** Infrastructure may depend on Application interfaces and Domain models, but never on Presentation or Frontend.
 
-4. **Presentation Layer (`masar/presentation/`)**
-   - Handles CLI and user interaction (`presentation/cli.py`).
-   - Displays information to users and collects user input.
-   - **Rule:** Presentation depends on Application services and Domain models/exceptions.
+4. **Presentation Layer (`masar/presentation/`)** — See [masar/presentation/AGENTS.md](masar/presentation/AGENTS.md)
+   - Handles REST API delivery (`presentation/api/`) via FastAPI and CLI terminal interaction (`presentation/cli.py`).
+   - Centralized exception handlers map Domain exceptions to standardized HTTP status codes and detail payloads.
+   - Route handlers are thin controllers delegating to Application services with `Depends(get_current_user)`.
+   - **Rule:** Presentation depends on Application services/schemas and Domain models/exceptions.
 
-5. **Composition Root & Dependency Injection (`masar/container.py`)**
+5. **Frontend Layer (`frontend/`)** — See [frontend/AGENTS.md](frontend/AGENTS.md)
+   - Next.js 16 (App Router with Turbopack), React 19, and Tailwind CSS v4 web application.
+   - Dual-theme system (Light & Dark mode) with `ThemeContext` and `localStorage` persistence.
+   - Typed API client services consuming the FastAPI backend with Bearer token authentication.
+   - **Rule:** Backend REST API is the single source of truth. UI never bypasses backend business rules or validation.
+
+6. **Composition Root & Dependency Injection (`masar/container.py`, `masar/presentation/api/dependencies.py`)**
    - Instantiates concrete Infrastructure repositories and wires them into Application services.
-   - Injects wired services into the Presentation layer.
+   - Injects wired services into API route handlers and CLI controllers.
    - Keeps layer boundaries decoupled without hardcoded infrastructure dependencies inside Application or Presentation.
 
 These layers must maintain strict inward dependency direction.
 
-The architecture should evolve when the application moves to FastAPI, PostgreSQL, and AI integration without unnecessary rewrites.
+The architecture evolves gracefully as the application grows without unnecessary rewrites.
 
 Do not force abstractions that are not currently justified.
+
+### Multi-Layer AGENTS.md Maintenance Rule
+
+Each layer has its own dedicated `AGENTS.md` specification detailing its directory organization, implementation rules, architectural approach, and tooling:
+- [masar/domain/AGENTS.md](masar/domain/AGENTS.md)
+- [masar/application/AGENTS.md](masar/application/AGENTS.md)
+- [masar/infrastructure/AGENTS.md](masar/infrastructure/AGENTS.md)
+- [masar/presentation/AGENTS.md](masar/presentation/AGENTS.md)
+- [frontend/AGENTS.md](frontend/AGENTS.md)
+
+**Mandate:** In all future implementations, whenever a layer's structure, rules, patterns, dependencies, or tools change, or whenever the developer provides feedback affecting a layer, the corresponding layer's `AGENTS.md` file (and this root `AGENTS.md` if cross-cutting) MUST be updated to document the new reality.
 
 ## 2. Development Execution
 
