@@ -1,6 +1,11 @@
+'use client';
+
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 
 export function Header() {
+  const { isAuthenticated, logout } = useAuth();
+
   return (
     <header className="w-full border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -20,7 +25,7 @@ export function Header() {
           </Link>
         </div>
 
-        <nav className="flex items-center gap-4">
+        <nav className="flex items-center gap-3 sm:gap-4">
           <a
             href="http://localhost:8000/docs"
             target="_blank"
@@ -29,18 +34,38 @@ export function Header() {
           >
             API Docs
           </a>
-          <Link
-            href="/login"
-            className="text-xs sm:text-sm font-medium text-slate-300 hover:text-white px-3 py-1.5 rounded-md hover:bg-slate-800 transition-colors"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/register"
-            className="text-xs sm:text-sm font-medium bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-md shadow-sm transition-colors"
-          >
-            Get started
-          </Link>
+
+          {isAuthenticated ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="text-xs sm:text-sm font-medium text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-md hover:bg-slate-900 transition-colors"
+              >
+                Dashboard
+              </Link>
+              <button
+                onClick={logout}
+                className="text-xs sm:text-sm font-medium text-slate-400 hover:text-rose-400 px-2.5 py-1.5 rounded-md hover:bg-rose-500/10 transition-colors"
+              >
+                Sign out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-xs sm:text-sm font-medium text-slate-300 hover:text-white px-3 py-1.5 rounded-md hover:bg-slate-800 transition-colors"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/register"
+                className="text-xs sm:text-sm font-medium bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-md shadow-sm transition-colors"
+              >
+                Get started
+              </Link>
+            </>
+          )}
         </nav>
       </div>
     </header>
