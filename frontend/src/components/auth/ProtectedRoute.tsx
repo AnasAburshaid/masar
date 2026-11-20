@@ -19,7 +19,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
-          <p className="text-xs text-slate-400">Verifying authenticated session...</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Verifying authenticated session...</p>
         </div>
       </div>
     );
