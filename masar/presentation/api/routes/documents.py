@@ -22,9 +22,9 @@ router = APIRouter(prefix="/documents", tags=["Documents"])
     summary="Upload a new learning document (PDF, TXT, MD)",
 )
 async def upload_document(
+    document_service: Annotated[DocumentService, Depends(get_document_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
     file: UploadFile = File(...),
-    document_service: Annotated[DocumentService, Depends(get_document_service)] = None,  # type: ignore[assignment]
-    current_user: Annotated[User, Depends(get_current_user)] = None,  # type: ignore[assignment]
 ) -> DocumentResponseSchema:
     """Upload and process a learning resource document (PDF, TXT, or MD up to 10MB)."""
     content_bytes = await file.read()

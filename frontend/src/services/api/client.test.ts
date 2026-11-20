@@ -66,3 +66,32 @@ test('ApiClient maps 401 response to ApiError', async (t) => {
     }
   );
 });
+
+test('ApiClient passes FormData untouched in post without application/json Content-Type', async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  let capturedBody: unknown = null;
+  let capturedHeaders: Headers | undefined;
+
+  globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    capturedBody = init?.body;
+    capturedHeaders = init?.headers ? new Headers(init.headers) : undefined;
+    return new Response(JSON.stringify({ id: 1 }), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }) as typeof fetch;
+
+  const client = new ApiClient('http://localhost:8000');
+  const formData = new FormData();
+  formData.append('test', 'value');
+
+  const res = await client.post<{ id: number }>('/upload', formData);
+  assert.equal(res.id, 1);
+  assert.ok(capturedBody instanceof FormData);
+  assert.equal(capturedHeaders?.has('Content-Type'), false);
+});
+
