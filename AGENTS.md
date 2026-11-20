@@ -33,21 +33,22 @@ Use the following conceptual layers and directory organization, each governed by
 
 1. **Domain Layer (`masar/domain/`)** — See [masar/domain/AGENTS.md](masar/domain/AGENTS.md)
    - Core business entities, models, and domain rules.
-   - Domain models are separated into individual files (`domain/models/journey.py`, `domain/models/section.py`, `domain/models/topic.py`, `domain/models/note.py`, `domain/models/progress.py`, `domain/models/user.py`).
-   - Domain exceptions are organized separately under `domain/exceptions/` (`base.py`, `journey.py`, `section.py`, `topic.py`, `note.py`, `user.py`, `storage.py`).
+   - Domain models are separated into individual files (`domain/models/journey.py`, `domain/models/section.py`, `domain/models/topic.py`, `domain/models/note.py`, `domain/models/progress.py`, `domain/models/user.py`, `domain/models/ai.py`).
+   - Domain exceptions are organized separately under `domain/exceptions/` (`base.py`, `journey.py`, `section.py`, `topic.py`, `note.py`, `user.py`, `ai.py`, `storage.py`).
    - **Rule:** Domain must not depend on Application, Infrastructure, Presentation, or Frontend.
 
 2. **Application Layer (`masar/application/`)** — See [masar/application/AGENTS.md](masar/application/AGENTS.md)
-   - Application services and use cases organized into individual files (`journey_service.py`, `section_service.py`, `topic_service.py`, `note_service.py`, `progress_service.py`, `user_service.py`).
-   - Repository abstractions (interfaces/abstract base classes) defined in `application/interfaces/repositories/` and security abstractions in `application/interfaces/security/`.
+   - Application services and use cases organized into individual files (`journey_service.py`, `section_service.py`, `topic_service.py`, `note_service.py`, `progress_service.py`, `user_service.py`, `ai_service.py`).
+   - Repository abstractions defined in `application/interfaces/repositories/`, security in `application/interfaces/security/`, and AI provider in `application/interfaces/ai/`.
    - Pydantic v2 DTO validation schemas defined in `application/schemas/`.
    - **Rule:** Application depends on Domain and abstract interfaces. Application must NOT import or depend on concrete Infrastructure or Presentation implementations.
 
 3. **Infrastructure Layer (`masar/infrastructure/`)** — See [masar/infrastructure/AGENTS.md](masar/infrastructure/AGENTS.md)
-   - Implements repository and security abstractions defined in the Application layer.
+   - Implements repository, security, and AI abstractions defined in the Application layer.
    - Implementations are organized by technology:
      - Relational Database & SQLAlchemy 2.0 ORM (`infrastructure/database/`, `infrastructure/repositories/database/`).
      - Cryptography & Auth (`infrastructure/security/password.py` for PBKDF2, `infrastructure/security/jwt_token.py` for PyJWT).
+     - AI Providers (`infrastructure/ai/openrouter_provider.py` for OpenRouter HTTP, `infrastructure/ai/mock_provider.py` for zero-network testing).
      - File storage adapters (`infrastructure/storage/json_storage.py`, `infrastructure/repositories/json/`).
      - In-memory testing adapters (`infrastructure/repositories/in_memory/`).
    - **Rule:** Infrastructure may depend on Application interfaces and Domain models, but never on Presentation or Frontend.

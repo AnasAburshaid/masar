@@ -1,5 +1,12 @@
 """Application schemas package for input validation, serialization, and storage validation."""
 
+from masar.application.schemas.ai import (
+    AIResponseSchema,
+    AIUsageSchema,
+    ChatMessageSchema,
+    ChatRequestSchema,
+    CompletionRequestSchema,
+)
 from masar.application.schemas.journey import (
     JourneyCreateSchema,
     JourneyResponseSchema,
@@ -42,6 +49,12 @@ from masar.application.schemas.user import (
 )
 
 __all__ = [
+    # AI
+    "AIResponseSchema",
+    "AIUsageSchema",
+    "ChatMessageSchema",
+    "ChatRequestSchema",
+    "CompletionRequestSchema",
     # Journey
     "JourneyCreateSchema",
     "JourneyUpdateSchema",

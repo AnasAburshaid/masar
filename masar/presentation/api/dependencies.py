@@ -5,6 +5,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from masar.application.services import (
+    AIService,
     JourneyService,
     NoteService,
     ProgressService,
@@ -87,6 +88,19 @@ def get_user_service(request: Request) -> UserService:
     service = build_user_service(settings=settings)
     request.app.state.user_service = service
     return service
+
+
+def get_ai_service(request: Request) -> AIService:
+    """Dependency provider for AIService."""
+    if hasattr(request.app.state, "ai_service") and request.app.state.ai_service is not None:
+        return request.app.state.ai_service  # type: ignore[no-any-return]
+    from masar.container import build_ai_service
+
+    settings = get_app_settings(request)
+    service = build_ai_service(settings=settings)
+    request.app.state.ai_service = service
+    return service
+
 
 
 def get_current_user(

@@ -123,6 +123,19 @@ class TestArchitectureAndDependencyDirection(unittest.TestCase):
         from masar.infrastructure.repositories.json.section_repository import JsonSectionRepository
         from masar.infrastructure.repositories.json.topic_repository import JsonTopicRepository
         from masar.infrastructure.repositories.json.note_repository import JsonNoteRepository
+        from masar.domain.models.ai import AIResponse, AIUsage, ChatMessage
+        from masar.domain.exceptions.ai import (
+            AIError,
+            AIAuthenticationError,
+            AIConfigurationError,
+            AIProviderError,
+            AIRateLimitError,
+            AITimeoutError,
+        )
+        from masar.application.interfaces.ai.ai_provider import AIProvider
+        from masar.application.services.ai_service import AIService
+        from masar.infrastructure.ai.mock_provider import MockAIProvider
+        from masar.infrastructure.ai.openrouter_provider import OpenRouterProvider
 
         self.assertTrue(issubclass(InMemoryJourneyRepository, JourneyRepository))
         self.assertTrue(issubclass(InMemorySectionRepository, SectionRepository))
@@ -136,6 +149,13 @@ class TestArchitectureAndDependencyDirection(unittest.TestCase):
         self.assertTrue(issubclass(SectionNotFoundError, EntityNotFoundError))
         self.assertTrue(issubclass(TopicNotFoundError, EntityNotFoundError))
         self.assertTrue(issubclass(NoteNotFoundError, EntityNotFoundError))
+        self.assertTrue(issubclass(OpenRouterProvider, AIProvider))
+        self.assertTrue(issubclass(MockAIProvider, AIProvider))
+        self.assertTrue(issubclass(AIAuthenticationError, AIError))
+        self.assertTrue(issubclass(AIRateLimitError, AIError))
+        self.assertTrue(issubclass(AITimeoutError, AIError))
+        self.assertTrue(issubclass(AIProviderError, AIError))
+        self.assertTrue(issubclass(AIConfigurationError, AIError))
 
 
 

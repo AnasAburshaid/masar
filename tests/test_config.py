@@ -15,16 +15,16 @@ class TestConfigAndSettings(unittest.TestCase):
 
     def setUp(self) -> None:
         clear_settings_cache()
-        # Clean up any MASAR_ env vars
+        # Clean up any MASAR_ or OPENROUTER_ env vars
         self.old_env = {}
         for key in list(os.environ.keys()):
-            if key.startswith("MASAR_"):
+            if key.startswith("MASAR_") or key.startswith("OPENROUTER_") or key == "AI_API_KEY":
                 self.old_env[key] = os.environ.pop(key)
 
     def tearDown(self) -> None:
         clear_settings_cache()
         for key in list(os.environ.keys()):
-            if key.startswith("MASAR_"):
+            if key.startswith("MASAR_") or key.startswith("OPENROUTER_") or key == "AI_API_KEY":
                 os.environ.pop(key, None)
         for key, val in self.old_env.items():
             os.environ[key] = val
@@ -68,6 +68,31 @@ class TestConfigAndSettings(unittest.TestCase):
 
         cli = build_cli(settings=custom_settings)
         self.assertIsNotNone(cli)
+
+    def test_ai_settings_defaults(self) -> None:
+        settings = Settings()
+        self.assertEqual(settings.ai_provider, "openrouter")
+        self.assertEqual(settings.ai_model, "nvidia/nemotron-3-ultra-550b-a55b:free")
+        self.assertEqual(settings.ai_base_url, "https://openrouter.ai/api/v1")
+        self.assertEqual(settings.ai_timeout_seconds, 30.0)
+        self.assertEqual(settings.ai_temperature, 0.7)
+
+    def test_ai_settings_env_overrides(self) -> None:
+        os.environ["MASAR_AI_PROVIDER"] = "mock"
+        os.environ["MASAR_AI_MODEL"] = "custom-nemotron"
+        os.environ["OPENROUTER_API_KEY"] = "sk-test-alias-key"
+        os.environ["MASAR_AI_TIMEOUT_SECONDS"] = "45.0"
+
+        settings = Settings()
+        self.assertEqual(settings.ai_provider, "mock")
+        self.assertEqual(settings.ai_model, "custom-nemotron")
+        self.assertEqual(settings.ai_api_key, "sk-test-alias-key")
+        self.assertEqual(settings.ai_timeout_seconds, 45.0)
+
+    def test_ai_invalid_provider_raises_validation_error(self) -> None:
+        with self.assertRaises(ValidationError):
+            Settings(ai_provider="invalid_ai")  # type: ignore[arg-type]
+
 
 
 if __name__ == "__main__":

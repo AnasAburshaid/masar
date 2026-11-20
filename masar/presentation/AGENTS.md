@@ -41,10 +41,14 @@ masar/presentation/
 3. **Centralized Exception Handling:**
    - Handlers in `app.py` catch domain exceptions and map them to standard HTTP status codes:
      - `EntityNotFoundError` ➔ `404 Not Found`
-     - `ValidationError` ➔ `400 Bad Request`
-     - `UnauthorizedError` / `InvalidCredentialsError` ➔ `401 Unauthorized`
-     - `ForbiddenError` ➔ `403 Forbidden`
+     - `ValidationError` ➔ `400 Bad Request` / `422 Unprocessable Entity`
+     - `UnauthorizedError` / `AuthenticationError` / `AIAuthenticationError` ➔ `401 Unauthorized`
+     - `ForbiddenError` / `AccessDeniedError` ➔ `403 Forbidden`
      - `ConflictError` / `UserAlreadyExistsError` ➔ `409 Conflict`
+     - `AIRateLimitError` ➔ `429 Too Many Requests`
+     - `AITimeoutError` ➔ `504 Gateway Timeout`
+     - `AIProviderError` ➔ `502 Bad Gateway`
+     - `AIConfigurationError` / `AIError` / `StorageError` ➔ `500 Internal Server Error`
 4. **Security & Authentication Enforcement:**
    - Protected routes must depend on `Annotated[User, Depends(get_current_user)]`.
    - The `current_user.id` is explicitly passed to Application Services to guarantee data ownership isolation.

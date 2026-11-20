@@ -2,9 +2,9 @@
 
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -50,6 +50,45 @@ class Settings(BaseSettings):
     cors_origins: list[str] = Field(
         default=["http://localhost:3000", "http://127.0.0.1:3000"],
         description="Allowed CORS origins for frontend-backend communication",
+    )
+    ai_provider: Literal["openrouter", "mock"] = Field(
+        default="openrouter",
+        description="Active AI/LLM provider backend ('openrouter' or 'mock')",
+    )
+    ai_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices(
+            "OPENROUTER_API-KEY",
+            "OPENROUTER_API_KEY",
+            "MASAR_AI_API_KEY",
+            "AI_API_KEY",
+        ),
+        description="API key for AI provider (e.g. OpenRouter)",
+    )
+    ai_model: str = Field(
+        default="nvidia/nemotron-3-ultra-550b-a55b:free",
+        validation_alias=AliasChoices("MASAR_AI_MODEL", "AI_MODEL"),
+        description="Default AI model identifier",
+    )
+    ai_base_url: str = Field(
+        default="https://openrouter.ai/api/v1",
+        validation_alias=AliasChoices("MASAR_AI_BASE_URL", "AI_BASE_URL"),
+        description="Base URL for OpenAI-compatible or OpenRouter API",
+    )
+    ai_timeout_seconds: float = Field(
+        default=30.0,
+        validation_alias=AliasChoices("MASAR_AI_TIMEOUT_SECONDS", "AI_TIMEOUT_SECONDS"),
+        description="HTTP request timeout in seconds for AI completions",
+    )
+    ai_temperature: float = Field(
+        default=0.7,
+        validation_alias=AliasChoices("MASAR_AI_TEMPERATURE", "AI_TEMPERATURE"),
+        description="Default sampling temperature for AI completions",
+    )
+    ai_max_tokens: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("MASAR_AI_MAX_TOKENS", "AI_MAX_TOKENS"),
+        description="Maximum tokens to generate",
     )
 
     model_config = SettingsConfigDict(
