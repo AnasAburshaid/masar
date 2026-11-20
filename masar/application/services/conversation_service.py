@@ -11,6 +11,9 @@ from masar.application.interfaces.repositories.conversation_repository import (
 from masar.application.interfaces.repositories.document_repository import (
     DocumentRepository,
 )
+from masar.application.interfaces.repositories.profile_repository import (
+    ProfileRepository,
+)
 from masar.application.services.action_service import ActionService
 from masar.application.services.ai_service import AIService
 from masar.application.services.tool_registry import ServicesBundle
@@ -94,6 +97,7 @@ class ConversationService:
         action_service: Optional[ActionService] = None,
         services_bundle: Optional[ServicesBundle] = None,
         document_repository: Optional[DocumentRepository] = None,
+        profile_repository: Optional[ProfileRepository] = None,
     ) -> None:
         self._repo = conversation_repository
         self._ai = ai_service
@@ -101,6 +105,7 @@ class ConversationService:
         self._action_service = action_service
         self._services_bundle = services_bundle
         self._document_repo = document_repository
+        self._profile_repo = profile_repository
 
     def _build_user_context(self, user_id: int) -> str:
         """Construct a real-time contextual snapshot of the user's existing learning roadmaps."""
@@ -121,6 +126,25 @@ class ConversationService:
                 topic_summaries = [f"'{t.title}'" + (" [completed]" if t.is_completed else "") for t in topics]
                 topic_str = f" (Topics: {', '.join(topic_summaries)})" if topic_summaries else " (No topics yet)"
                 lines.append(f"  * Section #{s.id}: '{s.title}'{topic_str}")
+
+        if self._profile_repo:
+            profile = self._profile_repo.get_profile(user_id)
+            if profile.items or profile.bio:
+                lines.append("\n### User's Personal Knowledge Profile:")
+                if profile.bio:
+                    lines.append(f"Background Bio: {profile.bio}")
+                confirmed = profile.confirmed_items
+                if confirmed:
+                    skill_parts = [f"{i.name} ({i.level})" if i.level else i.name for i in confirmed]
+                    lines.append(f"- User-Confirmed Skills & Knowledge (Proven): {', '.join(skill_parts)}")
+                inferred = profile.inferred_items
+                if inferred:
+                    inferred_parts = [f"{i.name} ({i.level})" if i.level else i.name for i in inferred]
+                    lines.append(f"- AI-Inferred Skills (Needs Confirmation): {', '.join(inferred_parts)}")
+                goals = [i.name for i in profile.items if i.category == "goal"]
+                if goals:
+                    lines.append(f"- Stated Learning Goals & Focus: {', '.join(goals)}")
+
         return "\n".join(lines)
 
     def create_conversation(

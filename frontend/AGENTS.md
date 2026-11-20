@@ -18,6 +18,7 @@ frontend/
 │   │   ├── login/page.tsx      # Sign-in page with SaaS split-screen layout
 │   │   ├── register/page.tsx   # Sign-up page with live validation & auto-login
 │   │   ├── dashboard/page.tsx  # Progress dashboard, KPI grid, roadmap distribution meter
+│   │   ├── profile/page.tsx    # Knowledge profile (verified skills, AI-inferred items review, bio editor)
 │   │   ├── journeys/
 │   │   │   ├── page.tsx        # Journeys list, creation modal, edit/delete dialogs
 │   │   │   └── [id]/page.tsx   # Journey Canvas (sections, topics, notes drawer, live progress)
@@ -40,6 +41,7 @@ frontend/
 │   │   ├── notes.ts            # /notes CRUD
 │   │   ├── conversations.ts    # /conversations CRUD and message submission
 │   │   ├── documents.ts        # /documents CRUD, uploads, and AI summarization
+│   │   ├── profile.ts          # /profile (getProfile, updateBio, addItem, confirmItem, deleteItem, extract)
 │   │   ├── actions.ts          # /conversations/{id}/proposals (list, get, approve, reject)
 │   │   ├── progress.ts         # /journeys/{id}/progress & dashboard metrics aggregator
 │   │   └── health.ts           # /health and root status
@@ -50,6 +52,7 @@ frontend/
 │   │   ├── document.ts
 │   │   ├── health.ts
 │   │   ├── journey.ts
+│   │   ├── profile.ts
 │   │   └── progress.ts
 │   └── config/env.ts           # Centralized environment variables (NEXT_PUBLIC_API_URL)
 ├── package.json                # Project dependencies and npm scripts

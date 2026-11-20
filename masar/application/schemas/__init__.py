@@ -38,6 +38,14 @@ from masar.application.schemas.note import (
     NoteResponseSchema,
     NoteUpdateSchema,
 )
+from masar.application.schemas.profile import (
+    LearningProfileResponseSchema,
+    ProfileBioUpdateSchema,
+    ProfileExtractionResponseSchema,
+    ProfileItemCreateSchema,
+    ProfileItemSchema,
+    ProfileItemUpdateSchema,
+)
 from masar.application.schemas.progress import (
     JourneyProgressSchema,
     SectionProgressSchema,
@@ -113,6 +121,13 @@ __all__ = [
     # Progress
     "JourneyProgressSchema",
     "SectionProgressSchema",
+    # Profile
+    "LearningProfileResponseSchema",
+    "ProfileBioUpdateSchema",
+    "ProfileExtractionResponseSchema",
+    "ProfileItemCreateSchema",
+    "ProfileItemSchema",
+    "ProfileItemUpdateSchema",
     # Storage
     "StorageDataSchema",
     "StorageJourneyRecord",

@@ -11,6 +11,7 @@ from masar.application.services import (
     DocumentService,
     JourneyService,
     NoteService,
+    ProfileService,
     ProgressService,
     SectionService,
     TopicService,
@@ -156,6 +157,27 @@ def get_document_service(request: Request) -> DocumentService:
     settings = get_app_settings(request)
     service = build_document_service(settings=settings)
     request.app.state.document_service = service
+    return service
+
+
+def get_profile_service(request: Request) -> ProfileService:
+    """Dependency provider for ProfileService."""
+    if (
+        hasattr(request.app.state, "profile_service")
+        and request.app.state.profile_service is not None
+    ):
+        return cast(ProfileService, request.app.state.profile_service)
+    from masar.container import build_profile_service
+
+    settings = get_app_settings(request)
+    doc_service = get_document_service(request)
+    ai_service = get_ai_service(request)
+    service = build_profile_service(
+        settings=settings,
+        ai_service=ai_service,
+        document_repository=doc_service._repo,
+    )
+    request.app.state.profile_service = service
     return service
 
 

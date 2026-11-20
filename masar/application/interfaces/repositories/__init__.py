@@ -13,6 +13,9 @@ from masar.application.interfaces.repositories.journey_repository import (
     JourneyRepository,
 )
 from masar.application.interfaces.repositories.note_repository import NoteRepository
+from masar.application.interfaces.repositories.profile_repository import (
+    ProfileRepository,
+)
 from masar.application.interfaces.repositories.section_repository import (
     SectionRepository,
 )
@@ -25,6 +28,7 @@ __all__ = [
     "DocumentRepository",
     "JourneyRepository",
     "NoteRepository",
+    "ProfileRepository",
     "SectionRepository",
     "TopicRepository",
     "UserRepository",

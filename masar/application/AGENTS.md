@@ -20,6 +20,7 @@ masar/application/
 │   │   ├── conversation_repository.py
 │   │   ├── action_proposal_repository.py
 │   │   ├── document_repository.py
+│   │   ├── profile_repository.py
 │   │   └── __init__.py
 │   ├── security/               # Security and cryptography abstractions
 │   │   ├── password_hasher.py  # ABC for password hashing and verification
@@ -41,6 +42,7 @@ masar/application/
 │   ├── conversation.py         # ConversationCreate, ConversationDetail, MessageCreate/Response
 │   ├── action.py               # ProposedAction, ActionResult, ActionProposal schemas
 │   ├── document.py             # DocumentResponse, DocumentDetail, DocumentSummarizeResponse
+│   ├── profile.py              # ProfileItemSchema, LearningProfileResponseSchema, ProfileBioUpdateSchema
 │   └── __init__.py
 ├── services/                   # Application Use Cases & Workflows
 │   ├── journey_service.py      # CRUD, filtering, and ownership verification for journeys
@@ -55,6 +57,7 @@ masar/application/
 │   ├── action_service.py       # Human-in-the-loop proposal validation, approval, and execution
 │   ├── document_extractor.py   # Multi-format plain text extraction (PDF, TXT, MD)
 │   ├── document_service.py     # Document uploads, text extraction, AI summarization, and retrieval
+│   ├── profile_service.py      # Personal knowledge profile, skill confirmations, document skill extraction
 │   └── __init__.py
 ├── __init__.py                 # Top-level application re-exports
 └── AGENTS.md                   # This specification file
