@@ -9,7 +9,9 @@ import { journeyService } from '@/services/api/journeys';
 import { sectionService } from '@/services/api/sections';
 import { topicService } from '@/services/api/topics';
 import { noteService } from '@/services/api/notes';
+import { progressService } from '@/services/api/progress';
 import { Journey, Section, Topic, Note } from '@/types/journey';
+import { JourneyProgress } from '@/types/progress';
 import { ApiError } from '@/services/api/errors';
 
 interface JourneyDetailPageProps {
@@ -23,6 +25,7 @@ function JourneyDetailContent({ journeyId }: { journeyId: number }) {
   const [journey, setJourney] = useState<Journey | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [topicsBySection, setTopicsBySection] = useState<Record<number, Topic[]>>({});
+  const [progress, setProgress] = useState<JourneyProgress | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
 
@@ -52,12 +55,14 @@ function JourneyDetailContent({ journeyId }: { journeyId: number }) {
     setIsLoading(true);
     setErrorBanner(null);
     try {
-      const [j, s] = await Promise.all([
+      const [j, s, p] = await Promise.all([
         journeyService.getJourney(journeyId),
         sectionService.listSections(journeyId),
+        progressService.getJourneyProgress(journeyId).catch(() => null),
       ]);
       setJourney(j);
       setSections(s);
+      setProgress(p);
 
       // Load topics for each section in parallel
       const topicsMap: Record<number, Topic[]> = {};
@@ -84,13 +89,15 @@ function JourneyDetailContent({ journeyId }: { journeyId: number }) {
 
     const fetchData = async () => {
       try {
-        const [j, s] = await Promise.all([
+        const [j, s, p] = await Promise.all([
           journeyService.getJourney(journeyId),
           sectionService.listSections(journeyId),
+          progressService.getJourneyProgress(journeyId).catch(() => null),
         ]);
         if (isCancelled) return;
         setJourney(j);
         setSections(s);
+        setProgress(p);
 
         const topicsMap: Record<number, Topic[]> = {};
         await Promise.all(
@@ -342,6 +349,30 @@ function JourneyDetailContent({ journeyId }: { journeyId: number }) {
           </button>
         </div>
       </div>
+
+      {/* Journey Progress Bar */}
+      {progress && progress.total_topics > 0 && (
+        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 shadow-sm space-y-2">
+          <div className="flex items-center justify-between text-xs font-mono">
+            <span className="text-slate-400">
+              Journey Progress:{' '}
+              <strong className="text-slate-200">{progress.completed_topics}</strong> of{' '}
+              <strong className="text-slate-200">{progress.total_topics}</strong> topics completed
+            </span>
+            <span className={`font-semibold ${progress.is_complete ? 'text-emerald-400' : 'text-slate-200'}`}>
+              {progress.percentage}% {progress.is_complete && '✓ Mastered'}
+            </span>
+          </div>
+          <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+            <div
+              className={`h-2 rounded-full transition-all duration-500 ${
+                progress.is_complete ? 'bg-emerald-500' : 'bg-gradient-to-r from-emerald-600 to-teal-400'
+              }`}
+              style={{ width: `${progress.percentage}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {errorBanner && (
         <div className="p-3.5 rounded-lg bg-rose-950/40 border border-rose-800/50 text-xs text-rose-300">
